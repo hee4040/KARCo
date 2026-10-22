@@ -1,11 +1,17 @@
+> 현재 권장 수집기: [균형 수집 설계와 완료 결과](docs/COLLECTION_DESIGN_V2.md). 최신 완료 데이터는 `data/designed_acquisition_v3/`이며 보정은 OFF입니다. 이전 진단·보정 실험은 아래에 보존했습니다.
+
+```powershell
+python -m knowledge_estimation.simulation.collect_designed --output knowledge_estimation/data/designed_new --seed 2026102301
+```
+
 > 최신 원인 분석: [통과 획득률과 데이터 품질 진단](docs/ACQUISITION_DATA_AUDIT.md). 데이터 구성 차이·고유 장면 수·시간 해상도를 확인했으며 추정기와 원본 데이터는 변경하지 않았습니다.
 
 
 > 현재 진행 기준: 사후 보정을 끄고 원본 추정기를 먼저 진단했습니다. 최신 결과와 원본·수정본 차이는 [raw 추정기 진단 및 수정](docs/RAW_REVISION.md)을 보세요. 아래 보정 실험은 이전 단계의 기록입니다.
 
-`powershell
+```powershell
 python -m knowledge_estimation.simulation.compare_raw --output knowledge_estimation/data/raw_revision_new
-`
+```
 
 # 상대 지식 추정 — D455 기준 2D 수집과 실측 로그 연결
 

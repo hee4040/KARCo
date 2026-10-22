@@ -19,11 +19,13 @@ def _id(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
-def fit_sources(root, *, allow_fixture=False, allow_simulation=False):
+def fit_sources(root, *, allow_fixture=False, allow_simulation=False, fit_split="calibration"):
+    if fit_split not in {"train", "calibration"}:
+        raise ValueError("source fitting requires train or calibration split")
     manifest, rows, _ = load_dataset(root, allow_fixture=allow_fixture, allow_simulation=allow_simulation)
     groups, seen = defaultdict(list), {}
     for row in rows:
-        if row["split"] != "calibration":
+        if row["split"] != fit_split:
             continue
         name = row["source"]
         if name not in PROBABILITIES + DISTRIBUTIONS:
@@ -97,8 +99,8 @@ def fit_sources(root, *, allow_fixture=False, allow_simulation=False):
             if parent["deadline_seconds"] != entry["deadline_seconds"]:
                 raise ValueError("p_recv and conditional p_ack use different deadlines")
     return {"schema_version": 1, "origin": manifest["origin"], "protocol_id": manifest["protocol_id"],
-            "parameters": entries, "fit_split": "calibration", "input_sha256": manifest["sha256"],
-            "groups": {field: sorted({r[field] for r in rows if r["split"] == "calibration"})
+            "parameters": entries, "fit_split": fit_split, "input_sha256": manifest["sha256"],
+            "groups": {field: sorted({r[field] for r in rows if r["split"] == fit_split})
                        for field in ("episode_id", "session_id", "object_instance", "route_group_id")}}
 
 
@@ -171,13 +173,18 @@ def main(argv=None):
     parser.add_argument("--allow-fixture", action="store_true")
     parser.add_argument("--allow-simulation", action="store_true")
     parser.add_argument("--conditioning", choices=("pooled", "evidence_sources_v1"), default="pooled")
+    parser.add_argument("--source-split", choices=("train", "calibration"), default="calibration")
     args = parser.parse_args(argv)
     try:
         options = {"allow_fixture": args.allow_fixture, "allow_simulation": args.allow_simulation}
         if args.mode == "scores":
+            if args.source_split != "calibration":
+                raise ValueError("source-split applies to source fitting only")
             options["conditioning"] = args.conditioning
         elif args.conditioning != "pooled":
             raise ValueError("conditioning applies to score calibration only")
+        if args.mode == "sources":
+            options["fit_split"] = args.source_split
         result = (fit_sources if args.mode == "sources" else fit_scores)(args.dataset, **options)
         write_json(args.output, result)  # JSON syntax is valid YAML 1.2.
     except (ValueError, KeyError, OSError) as error:
