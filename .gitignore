@@ -1,0 +1,7 @@
+__pycache__/
+SLAM/*.db
+SLAM/*.ply
+SLAM/ScreenCapture_*.png
+SLAM/ScreenCamera_*.json
+rl/models/ckpt/
+.vscode/
