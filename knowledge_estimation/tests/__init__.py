@@ -1,1 +1,1 @@
-"""Executable HTML scenario checks for the knowledge estimator."""
+"""Contract tests use explicit fixtures, never hardware performance data."""

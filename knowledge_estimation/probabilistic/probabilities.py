@@ -1,4 +1,4 @@
-"""KARCo probability identities with explicit assumptions; see RESEARCH_REVIEW.md.
+"""Probability identities; see ../docs/RESEARCH_BASIS.md for assumptions.
 
 These are not the second-order belief filters of Buehler et al.
 """
@@ -20,20 +20,6 @@ def receipt_given_no_ack(p_delivery: float, p_ack_given_delivery: float) -> floa
     if p_delivery * p_ack_given_delivery == 1:
         raise ValueError("no ACK is impossible when delivery and ACK are certain")
     return p_delivery * (1-p_ack_given_delivery) / (1-p_delivery*p_ack_given_delivery)
-
-
-def acquisition_probability(p_pass: float, p_visible_given_pass: float,
-                            p_store_given_visible: float) -> float:
-    """Chain rule for one opportunity to acquire valid knowledge.
-
-    Visibility is conditional on passing. Store means correctly storing usable
-    target information conditional on seeing it, not just writing bytes.
-    These conditional terms need no independence assumption for multiplication.
-    """
-    for name, value in (("p_pass", p_pass), ("p_visible_given_pass", p_visible_given_pass),
-                        ("p_store_given_visible", p_store_given_visible)):
-        probability(value, name)
-    return p_pass * p_visible_given_pass * p_store_given_visible
 
 
 def independent_union(probabilities) -> float:
