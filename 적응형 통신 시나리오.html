@@ -1,0 +1,1020 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>적응형 통신 시나리오</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+KR:wght@400;500;600;700&amp;display=swap">
+<style>
+/* Layout: 한 단. 머리말과 수치 읽는 법, 그 아래 시나리오 스테퍼 하나와 시나리오별 비교표 */
+:root{
+  --bg:#FAFBFC; --surface:#FFFFFF; --surface-2:#F0F3F5; --line:#E1E7EB; --line-2:#C9D3D9;
+  --fg:#16212A; --muted:#5B6873; --accent:#0D5C78; --accent-soft:#E2EFF4; --on-accent:#FFFFFF;
+  --amber:#955400; --amber-soft:#FBF0E0; --ok:#1B7451; --bad:#B23636;
+  --t-deliv:#2D63C4; --t-obs:#6A45BE; --t-persist:#955400; --t-suff:#0B7A60; --t-perf:#B23636; --t-under:#5B6872;
+  --obj-red:#D14343; --obj-blue:#2F6FD1; --obj-green:#2E9C5B;
+  --shadow:0 1px 2px rgba(16,32,42,.05),0 8px 28px rgba(16,32,42,.07);
+  --font-display:"Hahmlet","Noto Serif KR",serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1418; --surface:#151D22; --surface-2:#1B252B; --line:#26323A; --line-2:#36454F;
+    --fg:#E3EAEE; --muted:#98A7B1; --accent:#62BCD9; --accent-soft:#16313D; --on-accent:#0E1418;
+    --amber:#E2A043; --amber-soft:#2E2414; --ok:#5CC796; --bad:#EE7B7B;
+    --t-deliv:#7EA6F2; --t-obs:#B29BF0; --t-persist:#E2A043; --t-suff:#4DC3A1; --t-perf:#EE7B7B; --t-under:#9AA8B1;
+    --obj-red:#F07575; --obj-blue:#7FA8F5; --obj-green:#62CC8E;
+    --shadow:0 1px 2px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1418; --surface:#151D22; --surface-2:#1B252B; --line:#26323A; --line-2:#36454F;
+  --fg:#E3EAEE; --muted:#98A7B1; --accent:#62BCD9; --accent-soft:#16313D; --on-accent:#0E1418;
+  --amber:#E2A043; --amber-soft:#2E2414; --ok:#5CC796; --bad:#EE7B7B;
+  --t-deliv:#7EA6F2; --t-obs:#B29BF0; --t-persist:#E2A043; --t-suff:#4DC3A1; --t-perf:#EE7B7B; --t-under:#9AA8B1;
+  --obj-red:#F07575; --obj-blue:#7FA8F5; --obj-green:#62CC8E;
+  --shadow:0 1px 2px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.page{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 72px}
+a{color:var(--accent);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+[id]{scroll-margin-top:76px}
+h1,h2,h3,h4{margin:0;line-height:1.3;text-wrap:balance}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,1.3rem + 2.4vw,3rem);letter-spacing:-.015em}
+h2{font-size:clamp(1.4rem,1.15rem + 1vw,1.8rem);font-weight:700;letter-spacing:-.015em}
+h3{font-size:1.15rem;font-weight:600}
+h4{font-size:.98rem;font-weight:600}
+p{margin:0}
+ul{margin:0;padding-left:1.15em}
+li+li{margin-top:.3em}
+strong{font-weight:600}
+.prose{max-width:70ch}
+.eyebrow{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:1.12rem;max-width:66ch;color:var(--fg)}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+code{font-family:var(--font-mono);font-size:.84em;background:var(--surface-2);border-radius:4px;padding:.05em .34em;white-space:nowrap;color:var(--fg)}
+
+/* 머리말 */
+.hero{display:grid;gap:18px;padding-block:8px 32px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 32px;margin-top:6px}
+.goal{display:grid;gap:2px;align-content:start;min-width:0;padding-left:14px;border-left:2px solid var(--line-2)}
+.goal b{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.04em;color:var(--accent);font-weight:500}
+.basis{font-size:.85rem;color:var(--muted)}
+
+/* 레이아웃·목차 */
+.layout{display:block}
+.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.toc ul{list-style:none;margin:0;padding:8px 0;display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin}
+.toc li+li{margin-top:0}
+.toc a{display:block;white-space:nowrap;padding:.28rem .65rem;border-radius:999px;font-size:.86rem;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--fg)}
+.toc a[aria-current="true"]{color:var(--accent);background:var(--accent-soft);font-weight:600}
+.toc .toc-h{display:none}
+@media (min-width:1120px){
+  .layout{display:grid;grid-template-columns:168px minmax(0,1fr);gap:48px;align-items:start}
+  .toc{top:calc(env(safe-area-inset-top,0px) + 24px);border:0;background:transparent;padding-top:44px}
+  .toc .toc-h{display:block;margin-bottom:10px;font-size:.82rem;font-weight:600;color:var(--muted)}
+  .toc ul{flex-direction:column;overflow:visible;padding:0;gap:1px}
+  .toc a{border-radius:6px;padding:.26rem .6rem}
+}
+
+/* 구역 */
+section{padding-block:52px 4px}
+section.tight{padding-block:18px 0}
+.sec-head{display:grid;gap:6px;margin-bottom:22px}
+.stack{display:grid;gap:16px;align-content:start;min-width:0}
+.sub{margin-top:44px;display:grid;gap:16px}
+.sub>h3{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.abbr{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:.88rem;color:var(--muted)}
+.abbr span{white-space:nowrap}
+
+/* 칩 */
+.chip{--c:var(--muted);display:inline-flex;align-items:center;gap:.3em;padding:.06em .6em;border-radius:999px;font-size:.76rem;font-weight:600;line-height:1.65;color:var(--c);background:var(--surface-2);background:color-mix(in srgb,var(--c) 11%,transparent);white-space:nowrap}
+.k-deliv{--c:var(--t-deliv)} .k-obs{--c:var(--t-obs)} .k-persist{--c:var(--t-persist)}
+.k-suff{--c:var(--t-suff)} .k-perf{--c:var(--t-perf)} .k-under{--c:var(--t-under)} .k-key{--c:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+
+/* 착각 유형 목록 */
+.clist{display:grid;border-top:1px solid var(--line)}
+.crow{display:grid;grid-template-columns:150px minmax(0,1.1fr) minmax(0,1.4fr) minmax(0,1.2fr) 70px;gap:8px 20px;align-items:baseline;padding:13px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.crow.h{font-size:.74rem;color:var(--muted);font-weight:600;letter-spacing:.03em;padding:8px 0}
+.crow q{font-family:var(--font-display);font-weight:600;font-size:1.04rem}
+.crow .sc{font-size:.88rem;color:var(--muted)}
+.crow.rev{color:var(--muted)}
+@media (max-width:760px){.crow{grid-template-columns:minmax(0,1fr) auto}.crow.h{display:none}.crow q{grid-column:1/-1}.crow .c-why,.crow .c-show{grid-column:1/-1;font-size:.86rem;color:var(--muted)}}
+
+/* 블록: 상자 대신 위쪽 선 */
+.blk{display:grid;gap:8px;align-content:start;min-width:0}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px 32px}
+.vgrid>.blk{border-top:2px solid var(--line);padding-top:12px}
+.vgrid .fx{white-space:pre-wrap;word-break:break-word}
+.gate-t td:last-child{white-space:nowrap}
+.cnt{font-size:.86rem;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:560px){.strip button{min-height:36px}.sc-tab{min-height:40px}}
+.sc-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:32px;align-items:start}
+.card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;display:grid;gap:12px;min-width:0}
+
+/* 표: 바깥 테두리 없이 가로선만 */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+table.wide{min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:.62rem .8rem .62rem 0;border-bottom:1px solid var(--line)}
+th{font-weight:600;font-size:.76rem;letter-spacing:.03em;white-space:nowrap;color:var(--muted);border-bottom:1.5px solid var(--line-2)}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono);font-size:.82rem;white-space:nowrap}
+tr.me td{background:var(--accent-soft)}
+tr.me td:first-child{padding-left:.6rem}
+th:first-child{padding-left:0}
+.kv{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:9px 18px;font-size:.92rem}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+
+/* 메시지 토큰 */
+.m{display:inline-block;font-family:var(--font-mono);font-size:.78rem;padding:.04em .5em;border-radius:6px;background:var(--surface-2);white-space:nowrap;color:var(--fg)}
+.m.zero{color:var(--muted);background:transparent;box-shadow:inset 0 0 0 1px var(--line-2)}
+.m.big{background:var(--amber-soft);color:var(--fg)}
+.m.pick{background:var(--accent-soft);color:var(--accent);font-weight:500}
+
+/* 수식·코드·안내 */
+.fx{font-family:var(--font-mono);font-size:.85rem;background:var(--surface-2);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:pre;line-height:1.6}
+.code{font-family:var(--font-mono);font-size:.84rem;background:var(--surface-2);border-radius:10px;padding:16px 18px;overflow-x:auto;white-space:pre;line-height:1.7;margin:0}
+.code .c{color:var(--muted)}
+.code .k{color:var(--accent);font-weight:500}
+.note{border-radius:10px;padding:12px 16px;font-size:.92rem;background:var(--surface-2);display:grid;gap:4px}
+.note.info{background:var(--accent-soft)}
+.note.warn{background:var(--amber-soft)}
+.note>b:first-child{font-size:.76rem;letter-spacing:.04em;color:var(--muted);font-weight:600}
+.note.warn>b:first-child{color:var(--amber)}
+.note.info>b:first-child{color:var(--accent)}
+
+/* 정적 그림 */
+figure{margin:0;display:grid;gap:8px;min-width:0}
+.fig{overflow-x:auto}
+.fig svg{display:block;width:100%;max-width:820px;min-width:520px;height:auto}
+figcaption{font-size:.85rem;color:var(--muted);max-width:78ch}
+.dg{color:var(--muted)}
+.dg text{fill:var(--fg);font-family:var(--font-body);font-size:13px}
+.dg .ts{fill:var(--muted);font-size:11.5px}
+.dg .tb{font-weight:600}
+.dg .tacc{fill:var(--accent);font-weight:600}
+.dg .d-arena{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.dg .d-spot{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1.2}
+.dg .d-tag{fill:var(--fg)}
+.dg .d-home{fill:var(--surface);stroke:var(--amber);stroke-width:2}
+.dg .d-pa{fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linejoin:round}
+.dg .d-pb{fill:none;stroke:var(--amber);stroke-width:2.4;stroke-dasharray:7 6;stroke-linecap:round}
+.dg .d-occ{fill:none;stroke:var(--muted);stroke-width:5;stroke-dasharray:2 4}
+.dg .d-obs{fill:var(--accent)}
+.dg .d-box{fill:var(--surface);stroke:var(--line-2);stroke-width:1.2}
+.dg .d-box-acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
+.dg .d-edge{fill:none;stroke:currentColor;stroke-width:1.4}
+.dg .d-edge-acc{fill:none;stroke:var(--accent);stroke-width:1.9}
+.dg .f-a{fill:var(--accent)} .dg .f-b{fill:var(--amber)} .dg .f-m{fill:currentColor}
+.dg .d-scale{stroke:var(--fg);stroke-width:2}
+
+/* 시나리오 선택 */
+.sc-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.sc-tab{font:inherit;font-size:.93rem;border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);padding:.55rem .8rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:-1px}
+.sc-tab:hover{color:var(--fg)}
+.sc-tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+
+/* 스테퍼 */
+.stepper{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.st-head{display:grid;gap:10px;padding:20px 24px 16px}
+.st-head-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 18px}
+.st-head h3{font-size:1.3rem;font-weight:700}
+.st-goal{font-size:.94rem;color:var(--muted);max-width:72ch}
+.seg{justify-self:start;display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2)}
+.seg button{font:inherit;font-size:.84rem;border:0;background:transparent;color:var(--muted);padding:.3rem .8rem;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.st-body{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);border-top:1px solid var(--line)}
+.st-main{padding:8px 24px 18px;min-width:0}
+.st-side{padding:18px 24px;background:var(--surface-2);display:grid;gap:20px;align-content:start;min-width:0}
+
+/* 오른쪽 패널 */
+.side-blk{display:grid;gap:8px;align-content:start;min-width:0}
+.side-h{font-size:.74rem;font-weight:600;color:var(--muted);letter-spacing:.04em;display:flex;justify-content:space-between;gap:8px}
+.st-step h4{font-size:1.08rem}
+.st-step p{font-size:.93rem;line-height:1.65}
+.bel{display:grid;gap:12px}
+.bel-row{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;font-size:.86rem}
+.bel-row .nm{display:grid;gap:0;min-width:0}
+.bel-row .nm code{justify-self:start;background:transparent;padding:0;font-size:.8rem;font-weight:500}
+.bel-row .nm span{font-size:.78rem;color:var(--muted)}
+.bel-vals{display:flex;gap:10px;align-items:baseline;font-size:.78rem;color:var(--muted);white-space:nowrap}
+.bel-vals b{font-family:var(--font-mono);font-size:.86rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.bel-bar{grid-column:1/-1;height:5px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+.bel-bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px;transition:width .35s ease}
+.bel-row.chg .bel-bar i{background:var(--amber)}
+.flag{font-size:.7rem;font-weight:600;padding:.05em .5em;border-radius:999px;white-space:nowrap}
+.flag.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,transparent)}
+.flag.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.flag.under{color:var(--t-under);background:color-mix(in srgb,var(--t-under) 14%,transparent)}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-size:.86rem}
+.total b{font-family:var(--font-mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.st-ctrl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 24px;border-top:1px solid var(--line)}
+.navbtn{font:inherit;font-size:.9rem;font-weight:600;padding:.5rem 1.05rem;border-radius:10px;border:0;background:var(--surface-2);color:var(--fg);cursor:pointer;white-space:nowrap}
+.navbtn.primary{background:var(--accent);color:var(--on-accent)}
+.navbtn:disabled{opacity:.4;cursor:default}
+.prog{flex:1;max-width:360px;display:grid;gap:6px;justify-items:center}
+.prog-bar{width:100%;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.prog-bar i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+.prog span{font-family:var(--font-mono);font-size:.76rem;color:var(--muted)}
+.st-extra{display:grid;gap:18px;margin-top:22px}
+
+/* 모듈·계산기·근거 */
+.mods{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 20px;font-size:.9rem}
+.mods dt code{background:transparent;padding:0;color:var(--accent);font-size:.84rem}
+.mods dd{margin:0;color:var(--fg)}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:24px;align-items:start}
+.ctrls{display:grid;gap:12px;align-content:start}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.btn{font:inherit;font-size:.84rem;padding:.32rem .75rem;border-radius:999px;border:0;background:var(--surface-2);color:var(--fg);cursor:pointer}
+.btn:hover{color:var(--accent)}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
+.field{display:grid;grid-template-columns:minmax(0,1fr) 4.6em;gap:2px 10px;align-items:center;font-size:.87rem}
+.field>label{grid-column:1/-1;color:var(--muted)}
+.field input[type=range]{width:100%;accent-color:var(--accent)}
+.field output{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;font-size:.84rem}
+.field select{grid-column:1/-1}
+select{font:inherit;font-size:.9rem;padding:.38rem .5rem;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--fg);width:100%}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.check input{margin-top:.3em;accent-color:var(--accent)}
+.result{display:grid;gap:10px;min-width:0}
+.pick-line{font-size:1rem}
+.gate{font-size:.88rem}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;min-width:56px;margin-top:.5em}
+.bar i{display:block;height:100%;background:var(--line-2)}
+tr.me .bar i{background:var(--accent)}
+details{font-size:.88rem}
+details summary{cursor:pointer;color:var(--muted)}
+details ul{margin-top:6px}
+.refs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px 32px}
+.refs ul{font-size:.88rem;padding-left:1em}
+.foot{margin-top:60px;padding-top:16px;border-top:1px solid var(--line);font-size:.84rem;color:var(--muted)}
+
+/* 배치도 스테퍼: 배치도를 위에 크게, 설명은 아래 세 칸 */
+#stepper .st-body{grid-template-columns:minmax(0,1fr)}
+#stepper .st-stage{justify-items:center;padding:18px 24px 10px}
+#stepper .st-stage svg{max-width:900px}
+#stepper .st-side{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.15fr);gap:24px 32px;border-top:1px solid var(--line)}
+@media (max-width:900px){#stepper .st-side{grid-template-columns:minmax(0,1fr)}}
+.st-stage{margin:0;padding:16px 18px 12px;display:grid;gap:10px;align-content:start;min-width:0}
+.st-stage svg{display:block;width:100%;height:auto}
+.st-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--muted)}
+.st-legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{display:inline-block;width:20px;height:0;border-top:2.5px solid var(--accent)}
+.lg.b{border-top:2.5px dashed var(--amber)}
+.lg.ba{border-top:2.5px solid var(--amber)}
+.bot{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.72rem;font-weight:700;color:var(--on-accent);background:var(--accent)}
+.bot.b{background:var(--amber)}
+.acts{display:grid;gap:7px;font-size:.9rem}
+.acts div{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;line-height:1.5}
+.acts .bot{width:20px;height:20px;font-size:.66rem;margin-top:1px}
+.strip{display:flex;flex-wrap:wrap;gap:4px 6px;padding:12px 24px 0}
+.strip button{font:inherit;font-size:.82rem;border:0;background:transparent;color:var(--muted);padding:.25rem .55rem .25rem .3rem;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.strip button .k{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-family:var(--font-mono);font-size:.7rem;box-shadow:inset 0 0 0 1px var(--line-2)}
+.strip button.done{color:var(--fg)}
+.strip button.done .k{background:var(--accent-soft);color:var(--accent);box-shadow:none}
+.strip button[aria-current="step"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.strip button[aria-current="step"] .k{background:var(--accent);color:var(--on-accent);box-shadow:none}
+.stage .s-arena{fill:var(--bg);stroke:var(--line);stroke-width:1.5}
+.stage text{fill:var(--fg);font-family:var(--font-body);font-size:13px}
+.stage .s-name{font-weight:700;font-size:14px}
+.stage .s-lbl{fill:var(--muted);font-size:12px}
+.stage .s-spot{fill:var(--surface);stroke:var(--line-2);stroke-width:1.4}
+.stage .s-spot.hl{stroke:var(--accent);stroke-width:3}
+.stage .s-tag{fill:var(--fg)}
+.stage .s-loop{fill:none;stroke:var(--accent);stroke-width:2;opacity:.22;stroke-linejoin:round}
+.stage .s-obs{fill:var(--accent);opacity:.35}
+.stage .s-trail{fill:none;stroke:var(--amber);stroke-width:2.6;stroke-dasharray:8 6;stroke-linecap:round;stroke-linejoin:round}
+.stage .s-occ{fill:none;stroke:var(--fg);stroke-width:6;stroke-dasharray:2 4}
+.stage .s-home{fill:none;stroke:var(--amber);stroke-width:1.6;stroke-dasharray:4 3}
+.stage .o-red{fill:var(--obj-red)} .stage .o-blue{fill:var(--obj-blue)} .stage .o-green{fill:var(--obj-green)}
+.stage .o-ghost{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
+.stage .o-stk{fill:var(--surface)}
+.stage .o-lbl{fill:var(--muted);font-size:11.5px}
+.stage .o-bad{fill:var(--bad);font-size:11.5px;font-weight:600}
+.stage .rb-a{fill:var(--accent)} .stage .rb-b{fill:var(--amber)}
+.stage .rb-ring{fill:none;stroke:var(--accent);stroke-width:1.5;opacity:.4}
+.stage .rb-t{fill:var(--on-accent);font-weight:700;font-size:14px}
+.stage .m-ab{fill:none;stroke:var(--accent);stroke-width:2.6}
+.stage .m-ba{fill:none;stroke:var(--amber);stroke-width:2.6}
+.stage .f-ab{fill:var(--accent)} .stage .f-ba{fill:var(--amber)}
+.stage .pill{fill:var(--surface);stroke-width:1.6}
+.stage .pill.a{stroke:var(--accent)} .stage .pill.b{stroke:var(--amber)} .stage .pill.n{stroke:var(--line-2);stroke-dasharray:4 3}
+.stage .pill-t{font-family:var(--font-mono);font-size:12.5px;font-weight:500}
+.stage .pill-t.a{fill:var(--accent)} .stage .pill-t.b{fill:var(--amber)} .stage .pill-t.n{fill:var(--muted)}
+.stage .env-p{fill:var(--fg)}
+.stage .env-t{fill:var(--bg);font-size:12.5px;font-weight:600}
+@media (max-width:960px){.st-body{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){.sc-grid,.calc{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){body{font-size:15.5px}.kv,.mods{grid-template-columns:minmax(0,1fr);gap:2px 0}.kv dd,.mods dd{margin-bottom:8px}.st-main,.st-side,.st-head,.st-ctrl{padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bel-bar i,.prog-bar i,}
+
+/* v0.3 추가 */
+.layer{display:block;margin-top:3px;font-size:.7rem;color:var(--muted)}
+.contrib{list-style:none;margin:0 0 22px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px 32px;counter-reset:c}
+.contrib li{margin:0;display:grid;gap:4px;align-content:start;padding-top:12px;border-top:2px solid var(--accent);counter-increment:c}
+.contrib b{font-weight:600}
+.contrib b::before{content:counter(c) ". ";color:var(--accent);font-family:var(--font-mono);font-weight:500}
+.contrib span{font-size:.92rem;color:var(--muted)}
+.st-init{font-size:.88rem;color:var(--fg);max-width:78ch}
+.st-disclaim{font-size:.78rem;color:var(--amber);font-weight:600}
+.st-mini{display:flex;align-items:center;gap:8px;width:100%;max-width:900px;min-width:0}
+.st-mini-t{font-size:.86rem;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iconbtn{font:inherit;font-size:1.1rem;line-height:1;width:36px;height:36px;border-radius:10px;border:0;background:var(--surface-2);color:var(--fg);cursor:pointer;display:inline-grid;place-items:center;flex:none}
+.iconbtn:disabled{opacity:.4;cursor:default}
+.stage-wrap{width:100%;max-width:900px;overflow-x:auto}
+.zoom-btn{display:none;margin-left:auto;flex:none}
+#stepper .st-stage svg{max-height:min(62vh,540px)}
+.ev{font-size:.86rem;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;margin-top:6px}
+.ledger{display:grid;gap:6px;margin-top:6px}
+.msgs{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.msgs li{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;font-size:.84rem}
+.msgs .dir{font-family:var(--font-mono);font-size:.72rem;font-weight:500;padding:.02em .4em;border-radius:5px}
+.msgs .dir.ab{color:var(--accent);background:var(--accent-soft)}
+.msgs .dir.ba{color:var(--amber);background:var(--amber-soft)}
+.msgs .lbl{font-family:var(--font-mono);font-size:.8rem;overflow-wrap:anywhere}
+.msgs .sz{font-family:var(--font-mono);font-size:.8rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.msgs li.lost .lbl{text-decoration:line-through;color:var(--muted)}
+.msgs em{display:inline-block;font-style:normal;color:var(--bad);font-weight:600;font-family:var(--font-body)}
+.bel-dec{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:.76rem;color:var(--muted);padding-left:8px;border-left:2px solid var(--line-2)}
+.bel-dec.now{border-left-color:var(--amber)}
+.bel-dec b{font-family:var(--font-mono);font-size:.8rem;color:var(--fg)}
+.when{font-size:.7rem;font-weight:600;color:var(--muted);min-width:3.6em}
+.bel-vals{flex-wrap:wrap;white-space:normal}
+.bel-note{margin-top:4px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.anchor{font-family:var(--font-mono);font-size:.72rem;color:var(--muted);user-select:all;margin-left:6px}
+.calc-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+details.more{border-top:1px solid var(--line);padding-top:8px}
+details.more .ctrls{margin-top:10px}
+.calc-t{min-width:480px}
+.calc-t td,.calc-t th{padding-right:.55rem}
+.sub-h{margin-top:30px;margin-bottom:12px;font-size:1.05rem}
+.check-list{display:grid;gap:8px;font-size:.92rem;max-width:84ch;margin-bottom:22px}
+.refs-t td:first-child{min-width:150px}
+.refs-t tr.grp td{font-weight:600;font-size:.8rem;color:var(--accent);padding-top:1.2rem;border-bottom:1.5px solid var(--line-2)}
+.kv.ids{margin-bottom:6px}
+.stage .m-ab.lost,.stage .m-ba.lost{stroke-dasharray:6 5;opacity:.75}
+.stage .lost-bg{fill:var(--surface);stroke:var(--bad);stroke-width:1.6}
+.stage .lost-x{fill:var(--bad);font-size:12px;font-weight:700}
+.st-extra h4{margin-top:4px}
+@media (max-width:620px){
+  .zoom-btn{display:inline-flex}
+  .stage-wrap.zoom svg{min-width:680px;max-height:none}
+  .strip button{min-height:44px}
+  .sc-tab{min-height:44px}
+  .navbtn{min-height:44px}
+  .iconbtn{width:44px;height:44px}
+  .btn{min-height:40px}
+}
+@media print{
+  .toc{position:static}
+  .st-ctrl,.st-mini,.strip,.presets{display:none}
+  .stepper,.card{box-shadow:none;border:1px solid var(--line)}
+  details>*{display:block}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:.75em;color:var(--muted);word-break:break-all}
+}
+.scen-page{max-width:1080px}
+.scen-page .hero{padding-block:4px 22px}
+.scen-page #scenarios{padding-top:24px}
+.scen-page h1{font-size:clamp(1.8rem,1.3rem + 1.8vw,2.5rem)}
+.howto{display:grid;gap:10px}
+.howto h2{font-size:1rem;font-weight:600}
+.howto .kv{font-size:.88rem;gap:6px 18px}
+.howto .kv dt{white-space:nowrap}
+</style>
+
+<div class="page scen-page">
+<header class="hero" id="top">
+  <p class="basis">캡스톤디자인(다) 2조 404 Context Not Found · 적응형 통신 설계 v0.3</p>
+  <h1>적응형 통신 시나리오</h1>
+  <p class="lead">Robot A가 Robot B가 이미 가진 정보를 추정해 메시지 내용을 고르는 네 가지 상황을 단계별로 본다. 정책·모델·평가 설명은 노션 설계 문서에 있다.</p>
+  <div class="abbr">
+    <span><code>E</code> 사건 정보</span>
+    <span><code>N</code> 정상 위치·방향</span>
+    <span><code>C</code> 현재 위치와 오차 σ</span>
+    <span><code>I</code> 물체 crop 이미지 (30 KiB)</span>
+  </div>
+  <div class="howto">
+    <h2>수치 읽는 법</h2>
+    <dl class="kv">
+      <dt>추정 <code>b</code></dt><dd>A가 계산한 “B가 그 정보를 지금 유효하게 가졌을 확률”(0–1). <b>기록</b>은 평가용 B DB의 실제 값(0 또는 1)이고 평가에만 쓴다.</dd>
+      <dt>지금 / 결정 직전</dt><dd>“지금”은 이번 단계 이후 값, “결정 직전”은 메시지를 고를 때의 값이다. 추정이 맞았는지는 결정 직전 값으로 평가한다.</dd>
+      <dt>기대비용</dt><dd>보낼 후보마다 계산하는 점수로, 작을수록 좋다. 예시 가중치: 1 KiB당 0.1(30 KiB crop ≈ 3.0), 요청 왕복 1회 1, B가 확신하고 틀린 조작 1회 12, 재관측 2, 미해결 10.</dd>
+      <dt>예시 확률</dt><dd><code>p_acq</code> 0.72(지나가며 보고 저장), <code>q_learn</code> 0.9(직접 다룬 외형을 다음에 씀), <code>r_crop</code> 0.95(받은 crop으로 알아봄), <code>p_match</code>·<code>p_self_match</code> 0.9(외형으로 맞는 물체를 고름), <code>φ</code> 0.3(외형 비교가 틀릴 때 확신하고 틀리는 비율). 모두 실측으로 바꿀 가정값이다.</dd>
+      <dt>메시지 크기</dt><dd>E 120 B, N 40 B, C 40 B, I 30,720 B, ACK·RESULT 40 B의 예시 크기다. 실측은 serializer로 잰다.</dd>
+    </dl>
+  </div>
+</header>
+<main>
+
+<section id="scenarios" aria-label="시나리오">
+  
+  <div class="sc-tabs" role="tablist" aria-label="시나리오 선택">
+    <button class="sc-tab" role="tab" type="button" id="tab-sc0" data-sc="0" aria-selected="true" aria-controls="stepper">① 첫 사건·공통 게이트</button>
+    <button class="sc-tab" role="tab" type="button" id="tab-sc1" data-sc="1" aria-selected="false" aria-controls="stepper" tabindex="-1">② 지식 재사용</button>
+    <button class="sc-tab" role="tab" type="button" id="tab-sc2" data-sc="2" aria-selected="false" aria-controls="stepper" tabindex="-1">③ 지나가며 얻은 지식 <span class="chip k-key">핵심</span></button>
+    <button class="sc-tab" role="tab" type="button" id="tab-sc3" data-sc="3" aria-selected="false" aria-controls="stepper" tabindex="-1">④ 식별 모호함·미보고 오조작</button>
+  </div>
+
+  <div class="stepper" id="stepper" role="tabpanel" tabindex="0" aria-labelledby="tab-sc0" aria-describedby="st-help">
+    <div class="st-head">
+      <div class="st-head-top">
+        <h3 id="st-name">첫 사건과 공통 게이트</h3>
+        <div class="chips" id="st-chips"></div>
+      </div>
+      <p class="st-goal" id="st-goal"></p>
+      <div class="seg" id="st-variants" role="group" aria-label="실험 조건" hidden></div>
+      <p class="st-init" id="st-init"></p>
+      <p class="st-disclaim" id="st-help">설명용 예시 궤적이고 수치는 실측 전 가정값이다. 왼쪽·오른쪽 화살표 키로 단계를 넘긴다.</p>
+    </div>
+    <div class="st-body">
+      <figure class="st-stage">
+        <div class="st-mini">
+          <button class="iconbtn" type="button" id="st-prev2" aria-label="이전 단계">‹</button>
+          <span class="cnt" id="st-count2">1 / 6</span>
+          <button class="iconbtn" type="button" id="st-next2" aria-label="다음 단계">›</button>
+          <span class="st-mini-t" id="st-mini-t"></span>
+          <button class="btn zoom-btn" type="button" id="st-zoom" aria-pressed="false">도면 확대</button>
+        </div>
+        <div class="stage-wrap"><svg id="st-svg" class="stage" viewBox="0 0 680 380" role="img" aria-label="시나리오 배치도"></svg></div>
+        <figcaption class="st-legend">
+          <span><i class="lg"></i>A → B 메시지</span>
+          <span><i class="lg ba"></i>B → A 메시지</span>
+          <span><i class="lg b"></i>B 이동 경로</span>
+          <span>점선 칸 = 원래 자리 · 굵은 테두리 = 이번 단계에 바뀐 작업대</span>
+        </figcaption>
+      </figure>
+      <div class="st-side" aria-label="현재 단계 자세히">
+        <div class="side-blk st-step">
+          <div class="side-h"><span id="st-count">단계 1 / 6</span><span id="st-phase"></span></div>
+          <h4 id="st-t"></h4>
+          <p id="st-d"></p>
+          <div id="st-tag"></div>
+        </div>
+        <div class="side-blk">
+          <div class="acts" id="st-acts"></div>
+          <div class="ev" id="st-ev"></div>
+          <div class="ledger" id="st-ledger"></div>
+        </div>
+        <div class="side-blk">
+          <div class="side-h"><span>지식 상태</span><span>A의 추정 / 평가용 B 기록</span></div>
+          <div class="bel" id="st-belief"></div>
+          <p class="small muted bel-note">“높은 추정·미보유” 표시는 추정 0.5 이상인데 실제 0인 경우다(표시용 기준이며 정책의 생략 기준은 따로 있다). 추정의 정확도는 여러 사례를 모아 평가한다.</p>
+        </div>
+      </div>
+    </div>
+    <div class="strip" id="st-strip" role="group" aria-label="단계 목록"></div>
+    <div class="st-ctrl">
+      <button class="navbtn" type="button" id="st-prev">이전 단계</button>
+      <span class="cnt" id="st-prog-t">1 / 6</span>
+      <button class="navbtn primary" type="button" id="st-next">다음 단계</button>
+    </div>
+    <p class="sr" id="st-live" aria-live="polite"></p>
+  </div>
+  <div class="st-extra" id="st-extra"></div>
+
+</section>
+
+</main>
+<footer class="foot"><p>설명용 예시 궤적이다. 메시지 크기·확률·비용은 실측 전 예시값이다.</p></footer>
+</div>
+
+<script>
+/* 시나리오 단계 데이터 (설명용 예시 궤적, 실측 아님)
+   env: 현장에서 일어난 일, a: A가 한 일, b: B가 한 일
+   ms: 메시지 [{d: 'AB'|'BA', l: 내용, b: 예시 bytes, lost: 유실 여부}], nc: 보내지 않음
+   bel: A의 현재 추정, tru: 평가용 B 기록(A에는 주지 않음), dec: 결정 직전 기록 {bel, tru}
+   ev: 사건 상태. A/B/o/bel/tru/occ/ev/dec는 값을 주지 않으면 앞 단계 값을 이어 쓴다.
+   bytes는 스크립트에 적은 예시 크기의 합이며 serializer로 잰 값이 아니다. */
+var ACK = { d: 'BA', l: 'ACK', b: 40 };
+var OK = { d: 'BA', l: 'RESULT ok', b: 40 };
+function sc4First(ev, d) {
+  return {
+    t: '비슷한 물체 옆에서 P가 벗어남',
+    d: d || '2단계. S1에 P와 스티커만 다른 P′이 중심 간격 4 cm에 있고, P가 제자리를 벗어났다. A는 윗면 스티커로 어느 쪽이 P인지 확인했다. B는 P를 다뤄 본 적이 없다.',
+    env: 'P가 제자리를 벗어남 (P′이 바로 옆)', a: '발견 · 후보 2개, 구분 정보가 필요', b: 'H에서 대기',
+    A: 'O1', B: 'H', o: { P: 'mis', Pp: 'ok', Q: 'up' }, bel: [0, 0], tru: [0, 0], dec: null, ev: ev || 'confirmed', tag: { k: 'k-suff', t: '충분한지 판단' }
+  };
+}
+
+var SCENARIOS = [
+{
+  name: '첫 사건과 공통 게이트',
+  goal: 'B가 아무것도 모를 때 필요한 정보만 보내도 복구되는지 본다. 같은 사건의 재관찰 억제와 ACK 유실 처리는 모든 비교 방식이 함께 쓰는 공통 프로토콜이다.',
+  chips: [['k-deliv', '전달 착각'], ['', '1단계'], ['', '시뮬: normal · redundant · ack_loss']],
+  items: [['b_N(S1,P)', 'S1에서 P의 정상 위치 (layout v1)'], ['b_I(P)', 'P의 외형 기억']],
+  variants: [
+    { key: 'main', label: '(a) 기본', init: '시작 상태: B는 S1의 정상 배치와 P의 외형을 모름.', steps: [
+      { t: '이상 발생', d: '작업자가 P를 S1의 정상 위치에서 8 cm 옮긴다. 아직 아무도 모른다.', env: 'P를 8 cm 옮김', a: 'S3 쪽 순찰 중', b: 'H에서 대기', A: 'O3', B: 'H', o: { P: 'mis', Q: 'up' }, bel: [0, 0], tru: [0, 0], ev: null },
+      { t: 'A가 사건 확정', d: '이상 판정이 최소 지속시간을 넘겨 이어지고 해소 기준 아래로 내려가지 않아 사건 e1로 확정한다. P는 S1에 하나뿐이라 B가 색만으로 찾을 수 있으므로 필요한 것은 정상 위치(N)다.', a: '사건 e1 확정 · 필요한 것: N', b: 'H에서 대기', A: 'O1', ev: 'confirmed' },
+      { t: '보내고 ACK 받기', d: '사건 정보와 정상 위치를 보낸다. ACK에는 B가 저장한 항목과 버전(N, layout v1)이 적혀 온다. N은 등록된 정상 배치에서 나온 값이라 내용 신뢰도를 1로 둔다. 보내기 직전 A의 추정(0)은 평가용 기록으로 남는다.', a: 'E + N 전송 → ACK 확인', b: '검증·저장 후 ACK · S1로 출발', ms: [{ d: 'AB', l: 'TASK(E + N)', b: 160 }, ACK], dec: { bel: [0, 0], tru: [0, 0] }, bel: [1, 0], tru: [1, 0], ev: 'accepted' },
+      { t: '다시 봤지만 보내지 않음', d: 'B가 이동하는 동안 A가 S1을 다시 지나간다. 같은 사건이 처리 중이고 장면 변화가 없으므로 공통 사건 게이트가 막는다. 이 단계의 절감은 모든 비교 방식에 공통이다.', a: '같은 사건 · 처리 중 → 보내지 않음', b: 'S2 옆을 지나 S1로 이동', B: 'P2', nc: true, ev: 'executing', tag: { k: '', t: '공통 게이트' } },
+      { t: 'B가 복구하고 보고', d: 'B가 태그로 위치를 맞추고 P를 정상 위치로 옮긴 뒤 ok를 보고한다. B는 자기 카메라로 찍은 외형을 저장했다. ok는 B 자신의 판정이므로 A는 지식 값을 재검증 뒤에 갱신한다.', env: 'P 제자리로', a: 'RESULT 받음 · 값은 보류', b: '태그 정렬 → P 복구 → ok 보고', B: 'S1d', o: { P: 'ok', Q: 'up' }, ms: [OK], tru: [1, 1], ev: 'result_reported' },
+      { t: '재검증하고 종료', d: 'A가 다음 순찰에서 P가 제자리에 있는 것을 확인하고 사건을 닫는다. 이제 b_I를 q_learn까지 올린다. q_learn은 B가 직접 다룬 물체의 외형을 저장해 다음에 쓸 수 있을 확률이고, 예시값은 0.9다(실측 대상). 이 지식은 ②에서 다시 쓴다.', a: '재검증 성공 → b_I ← 0.9', b: 'S1에서 작업 마침', bel: [1, 0.9], ev: 'verified_closed', tag: { k: 'k-key', t: '② 재사용으로 이어짐' } }
+    ] },
+    { key: 'ack', label: '(b) ACK 유실', init: '시작 상태: 기본과 같음. ACK 한 번이 유실되는 통신 저하 조건.', steps: [
+      { t: 'A가 사건 확정', d: '기본 분기의 2단계와 같다. 필요한 것은 N이다.', env: 'P가 8 cm 벗어나 있음', a: '사건 e1 확정 · 필요한 것: N', b: 'H에서 대기', A: 'O1', B: 'H', o: { P: 'mis', Q: 'up' }, bel: [0, 0], tru: [0, 0], ev: 'confirmed' },
+      { t: '데이터는 갔지만 ACK가 사라짐', d: 'B는 TASK를 받아 저장하고 ACK를 보냈지만 ACK가 유실된다. A가 보기에는 데이터가 사라졌을 수도, ACK만 사라졌을 수도 있다. 메시지와 ACK가 각각 90% 확률로 도착한다고 가정하면, ACK가 오지 않은 경우 중 데이터는 도착한 경우의 비율은 (0.9 × 0.1) / (1 − 0.9 × 0.9) ≈ 0.47이다. 그래서 A는 b_N을 0.47로 둔다.', a: 'deadline까지 ACK 없음 → b_N ≈ 0.47', b: '받고 저장 · ACK 보냄', ms: [{ d: 'AB', l: 'TASK(E + N)', b: 160 }, { d: 'BA', l: 'ACK', b: 40, lost: true }], dec: { bel: [0, 0], tru: [0, 0] }, bel: [0.47, 0], tru: [1, 0], ev: 'sent', tag: { k: 'k-deliv', t: 'ACK 없음 = 수신 여부 불확실' } },
+      { t: '같은 msg_id로 재전송', d: 'A가 같은 msg_id로 다시 보낸다. B는 msg_id로 중복을 확인하고, 저장한 항목·버전을 담은 ACK만 다시 보낸다. 재전송 bytes도 총량에 들어간다.', a: '재전송 → ACK 확인', b: '중복 걸러 ACK만 재전송 · S1로 출발', ms: [{ d: 'AB', l: 'TASK(E + N) 재전송', b: 160 }, ACK], bel: [1, 0], ev: 'accepted' },
+      { t: 'B가 복구하고 보고', d: '기본 분기와 같다. ok는 B 자신의 판정이라 값은 보류한다.', env: 'P 제자리로', a: 'RESULT 받음 · 값은 보류', b: 'P 복구 → ok 보고', B: 'S1d', o: { P: 'ok', Q: 'up' }, ms: [OK], tru: [1, 1], ev: 'result_reported' },
+      { t: '재검증하고 종료', d: 'A가 확인하고 사건을 닫는다. 이 분기의 추가 비용은 재전송 한 번(TASK 160 B + ACK 40 B)과 대기 시간이다.', a: '재검증 성공 → b_I ← 0.9', b: 'S1에서 작업 마침', bel: [1, 0.9], ev: 'verified_closed' }
+    ] }
+  ],
+  extra: {
+    cmp: { h: ['방식', '첫 사건', '같은 사건 재관찰', 'ACK 유실'], r: [
+      ['<strong>제안</strong>', '<span class="m pick">E + N</span> 160 B', '<span class="m zero">보내지 않음</span> (공통 게이트)', '같은 msg_id로 재전송 1회'],
+      ['Confirmed Cache', '<span class="m">E + N</span>', '<span class="m zero">보내지 않음</span>', '같음'],
+      ['Event-gated Full Payload', '<span class="m big">E + N + C + I</span> 30.2 KiB', '<span class="m zero">보내지 않음</span>', '30.2 KiB 재전송'],
+      ['Minimal Push + Pull', '<span class="m">E</span> → 출발 전 N 요청 (왕복 1회)', '<span class="m zero">보내지 않음</span>', 'E 재전송'],
+      ['<span class="muted">약한 기준선: 주기적 전체 방송</span>', '<span class="muted">매번 30.2 KiB</span>', '<span class="muted">다시 30.2 KiB</span>', '<span class="muted">—</span>']], me: 0 },
+    meas: '공통 게이트의 중복 억제율(모든 방식 같음), 첫 사건 payload, 재전송 bytes와 대기 시간, 외부 정답 기준 성공률',
+    note: '①은 도입 시나리오다. 중복 억제는 공통 사건 관리자가 맡고, 상대 지식 추정의 효과는 과거 지식을 재사용하는 ②·③에서 본다.'
+  }
+},
+{
+  name: '지식 재사용과 그 한계',
+  goal: '이미 확인된 지식을 빼서 전송량을 줄이고, 지식이 사라지거나(지속 착각) 장면이 바뀌어 부족해진 순간(충분성 착각), 잘못 배운 지식이 다시 쓰이는 경우를 잡는지 본다. 기본 분기에서 제안과 Confirmed Cache가 같은 결정을 내리면 비교 조건이 공정하게 맞춰진 것이다.',
+  chips: [['k-persist', '지속 착각'], ['k-suff', '충분성 착각'], ['k-perf', '수행 착각'], ['', '시뮬: reuse · memory_reset · lookalike_2x2 · wrong_memory']],
+  items: [['b_N(S1,P)', 'S1에서 P의 정상 위치 (layout v1)'], ['b_I(P)', 'P의 외형 기억']],
+  variants: [
+    { key: 'base', label: '(a) 기본', init: '시작 상태: ①에서 ACK로 확인한 N(layout v1), 재검증으로 확인한 외형 기억(b_I = q_learn 0.9). ①은 verified_closed.', steps: [
+      { t: '새 사건', d: '① 이후 작업자가 P를 쓰고 엉뚱한 곳에 둔다. ①은 닫혔으므로 새 사건 e2를 만든다.', env: 'P가 다시 벗어남', a: '사건 e2 확정', b: 'H에서 대기', A: 'O1', B: 'H', o: { P: 'mis', Q: 'up' }, bel: [1, 0.9], tru: [1, 1], dec: null, ev: 'confirmed' },
+      { t: '사건 정보만 보냄', d: 'P가 유일하고, 같은 버전의 N은 ①에서 ACK로 확인됐다. Confirmed Cache도 같은 이유로 E만 보낸다. Full Payload라면 30.2 KiB였다.', a: 'E만 전송', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E)', b: 120 }, ACK], dec: { bel: [1, 0.9], tru: [1, 1] }, ev: 'accepted', tag: { k: 'k-key', t: '확인된 지식 재사용' } },
+      { t: '복구와 재검증', d: 'B는 저장해 둔 정상 위치로 P를 되돌리고 ok를 보고하고, A가 재검증으로 사건을 닫는다.', env: 'P 제자리로', a: 'RESULT → 재검증 성공', b: '저장된 N으로 복구 → ok', B: 'S1d', o: { P: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] },
+    { key: 'reset', label: '(b) 기억 초기화', init: '시작 상태: 기본과 같음. 이후 B의 영속 캐시가 초기화된다(재부팅으로는 유지되는 영속 캐시라고 가정). memory_epoch 7 → 8.', steps: [
+      { t: 'B 캐시 초기화, 통지 유실', d: '기본 프로토콜에서는 B가 새 epoch를 STATUS·ACK에 실어 알리므로 A가 바로 무효화한다. 이 분기는 그 STATUS가 유실된 실패 주입이다. A는 다음 증거가 올 때 알게 된다.', env: 'B 캐시 초기화 · epoch 8', a: 'S3 쪽 순찰 중 · 모름', b: '캐시 초기화 · STATUS(epoch 8) 전송', A: 'O3', B: 'H', o: { P: 'ok', Q: 'up' }, ms: [{ d: 'BA', l: 'STATUS(epoch 8)', b: 40, lost: true }], bel: [1, 0.9], tru: [0, 0], dec: null, ev: null, tag: { k: 'k-persist', t: '실패 주입 · 통지 유실' } },
+      { t: '새 사건, E만 보냄 → ACK에 epoch 8', d: 'P가 다시 벗어나자 A는 E만 보낸다. B의 ACK에 memory_epoch 8과 needs_info(N)가 실려 온다. A는 epoch 7에서 온 항목을 모두 무효화한다. 보내기 직전 A의 추정은 N 1, I 0.9였고 B의 실제 기록은 둘 다 0이었다. 이 차이가 평가에서 ‘높은 추정·미보유’로 집계된다.', env: 'P가 다시 벗어남', a: 'E 전송 → epoch 변경 확인 → 전부 무효화', b: '출발 전 점검 · N 없음', A: 'O1', o: { P: 'mis', Q: 'up' }, ms: [{ d: 'AB', l: 'TASK(E)', b: 120 }, { d: 'BA', l: 'ACK · needs_info(N) · epoch 8', b: 60 }], dec: { bel: [1, 0.9], tru: [0, 0] }, bel: [0, 0], ev: 'needs_info', tag: { k: 'k-persist', t: '지속 착각 · ACK로 드러남' } },
+      { t: 'N을 보충', d: 'A가 N을 보낸다. P가 S1에 하나뿐이라 이번에는 N만 보충하면 된다. 회복 비용(왕복 1회, B가 기다린 시간)을 기록한다.', a: 'INFO_RESPONSE(N)', b: '저장 · ACK · S1로 출발', ms: [{ d: 'AB', l: 'INFO_RESPONSE(N)', b: 80 }, ACK], bel: [1, 0], tru: [1, 0], ev: 'accepted' },
+      { t: '복구와 재검증', d: 'B가 복구하고 보고한 뒤 A가 재검증으로 닫는다. 다시 다룸 출처로 외형 지식이 생긴다.', env: 'P 제자리로', a: 'RESULT → 재검증 성공 → b_I ← 0.9', b: 'P 복구 → ok', B: 'S1d', o: { P: 'ok', Q: 'up' }, ms: [OK], bel: [1, 0.9], tru: [1, 1], ev: 'verified_closed' }
+    ] },
+    { key: 'look', label: '(c) 유사품 등장', init: '시작 상태: 기본과 같음(b_N 1, b_I 0.9). 이후 P 옆에 스티커만 다른 P′이 중심 간격 4 cm로 놓인다.', steps: [
+      { t: '비슷한 물체가 놓임', d: '작업자가 P 옆에 스티커만 다른 P′을 둔다. B가 가진 지식은 그대로이고, 색만으로 P를 고르기 어려워진 만큼 필요한 정보가 늘었다. A는 지식 값은 유지하고 필요도만 다시 계산한다.', env: 'P 옆에 P′ 놓임', a: '관찰 · 필요도 다시 계산', b: 'H에서 대기', A: 'O1', B: 'H', o: { P: 'ok', Pp: 'ok', Q: 'up' }, bel: [1, 0.9], tru: [1, 1], dec: null, ev: null, tag: { k: 'k-suff', t: '충분성 착각 주의' } },
+      { t: 'P가 벗어남', d: '새 사건 e2. B가 외형을 기억할 확률 0.9, A의 위치 오차 σ 3 cm, 간격 4 cm로 후보 8개의 기대비용을 계산하면 E + C가 0.90으로 가장 낮다. crop을 넣은 E + C + I는 이미지 전송 비용(약 3.0)만으로 이보다 크다. Confirmed Cache는 외형을 메시지로 ‘받은’ 기록이 없어 E + C + I(30.2 KiB)를 고른다.', env: 'P가 벗어남', a: '사건 e2 · 보낼 것 계산', o: { P: 'mis', Pp: 'ok', Q: 'up' }, ev: 'confirmed' },
+      { t: '현재 위치만 더해서 보냄', d: 'E와 C를 보낸다. C에는 A가 추정한 위치 오차 σ 3 cm가 함께 들어가고, B는 그 2배 반경 안 후보만 본다.', a: 'E + C 전송', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + C)', b: 160 }, ACK], dec: { bel: [1, 0.9], tru: [1, 1] }, ev: 'accepted' },
+      { t: 'B가 외형으로 구분', d: 'B는 C 반경 안 후보 중 저장한 외형과 맞는 것을 골라 복구한다. 가능한 성공 경로 하나다. 같은 계산에서 이 선택은 B가 확신하고 엉뚱한 물체를 집을 확률 약 2.7%, 평균 요청 0.12회를 남긴다(외형 기억이 틀리거나 없을 때).', env: 'P 제자리로', a: 'RESULT 받음', b: '외형으로 구분 → 복구 → ok', B: 'S1d', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'result_reported', tag: { k: 'k-key', t: 'crop 30 KiB 생략' } },
+      { t: '재검증', d: 'A가 P와 P′이 모두 제자리인 것을 확인하고 닫는다.', a: '재검증 성공', b: 'S1에서 작업 마침', ev: 'verified_closed' }
+    ] },
+    { key: 'wrong', label: '(d) 틀린 기억 재사용', init: '시작 상태: 이전 작업에서 B가 P′의 외형을 P의 것으로 저장했고, A의 재검증도 같은 판단을 해 b_I(P)를 0.9로 올려 둔 상태(실제 기록은 0). P 옆에 P′이 있음.', steps: [
+      { t: '잘못 배운 기억이 남아 있음', d: 'A와 B가 같은 인식기를 쓰면 같은 실수를 함께 할 수 있다. 이전 작업에서 B는 P′을 P로 알고 다뤘고, A의 재검증도 이를 성공으로 판단했다. 그래서 A의 추정은 0.9인데 B가 가진 외형은 P′의 것이다(R = 1, K = 0).', a: '재검증 통과로 기록 · b_I ← 0.9', b: 'P′의 외형을 “P의 외형”으로 저장', A: 'O1', B: 'H', o: { P: 'ok', Pp: 'ok', Q: 'up' }, bel: [1, 0.9], tru: [1, 0], dec: null, ev: null, tag: { k: 'k-perf', t: '수행 착각이 지식으로 남음' } },
+      { t: 'P가 벗어남 → ②(c)와 같은 결정', d: '새 사건 e4. A가 보기에는 ②(c)와 같은 조건이라 E + C(기대비용 0.90)를 고른다. 보내기 직전 기록은 추정 0.9, 실제 0이다.', env: 'P가 벗어남', a: 'E + C 전송', b: '받고 ACK', o: { P: 'mis', Pp: 'ok', Q: 'up' }, ms: [{ d: 'AB', l: 'TASK(E + C)', b: 160 }, ACK], dec: { bel: [1, 0.9], tru: [1, 0] }, ev: 'accepted' },
+      { t: 'B가 확신하고 P′을 옮김', d: 'B는 반경 안 후보 중 저장한 외형과 맞는 것을 고른다. 그 외형이 P′의 것이므로 P′을 골라 P의 목표 위치로 옮기고 ok를 보고한다. B 입장에서는 요청할 단서가 없었다.', env: 'P′이 P의 자리로 옮겨짐', a: 'RESULT 받음 · 값은 보류', b: '저장한 외형과 일치 → P′ 옮김 → ok', B: 'S1d', o: { P: 'mis', Pp: 'onP', Q: 'up' }, ms: [OK], ev: 'result_reported', tag: { k: 'k-perf', t: '같은 오조작 반복' } },
+      { t: '다른 시점에서 재검증', d: 'A가 윗면 스티커가 보이는 시점에서 재검증해 P′이 옮겨진 것을 찾는다. A는 evidence_ids로 이 외형이 어느 작업에서 생겼는지 찾아, 그 작업에서 얻은 지식을 모두 무효화한다(b_I ← 0). 재검증 시점을 바꾸는 규칙도 함께 기록한다.', a: '불일치 발견 → 그 작업의 지식 무효화', b: 'S1에서 대기', A: 'O1b', bel: [1, 0], ev: 'reopened', tag: { k: 'k-perf', t: '증거 목록으로 원인 추적' } },
+      { t: 'crop을 넣어 두 대상을 다시 보냄', d: 'P에는 C와 crop을, P′에는 정상 위치 N′과 현재 위치 C′을 넣는다. 새 crop을 받으면 B의 P 외형은 새 appearance_version으로 바뀐다. ACK 뒤 b_I는 r_crop 0.95.', a: 'TASK v2 전송 → ACK', b: '받고 ACK · 잘못된 외형 교체', A: 'O1', ms: [{ d: 'AB', l: 'TASK v2 · P(C,I) + P′(N′,C′)', b: 30960 }, ACK], dec: { bel: [1, 0], tru: [1, 0] }, bel: [1, 0.95], tru: [1, 1], ev: 'accepted' },
+      { t: '둘 다 복구하고 재검증', d: 'B가 P′을 돌려놓고 P를 지정 위치로 옮긴다. 이 분기의 결론은 두 가지다. 같은 인식기로 하는 재검증은 같은 오류를 놓칠 수 있으므로 최종 정답은 외부 기준으로 정하고, 지식마다 증거 목록을 남겨야 잘못 배운 지식을 골라 지울 수 있다.', env: 'P, P′ 모두 제자리로', a: 'RESULT → 재검증 성공', b: 'P′ 돌려놓기 → P 복구 → ok', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] }
+  ],
+  extra: {
+    cmp: { h: ['방식', '(a) 기본', '(b) 기억 초기화', '(c) 유사품', '(d) 틀린 기억'], r: [
+      ['<strong>제안</strong>', '<span class="m pick">E</span>', '<span class="m">E</span> → ACK에서 epoch 변경 확인, N 보충 1회', '<span class="m pick">E + C</span>', '<span class="m">E + C</span> → 오조작 → 재검증 → 무효화'],
+      ['Confirmed Cache', '<span class="m">E</span> (N은 ①에서 ACK 확인)', '같음', '<span class="m big">E + C + I</span> (외형 수신 기록 없음)', '<span class="m big">E + C + I</span> → crop이 잘못된 기억을 덮어 성공'],
+      ['Confirmed Cache + Result', '<span class="m">E</span>', '같음', '<span class="m">E + C</span> (재검증된 learned_items) · 제안과 같음', '제안과 같은 오조작'],
+      ['Minimal Push + Pull', '<span class="m">E</span>', '같음', '<span class="m">E</span> → 기억이 없으면 출발 전 요청', '<span class="m">E</span> → 같은 오조작'],
+      ['Event-gated Full Payload', '<span class="m big">E + N + C + I</span>', '<span class="m big">E + N + C + I</span>', '<span class="m big">E + N + C + I</span>', '<span class="m big">E + N + C + I</span> → 성공']], me: 0 },
+    fact: { cap: '(c)는 B의 외형 기억 × 유사품 2×2로 돌린다. A의 식별 정확도, 위치 오차, N 보유, 통신 상태는 칸마다 고정하고, 유사품 간격·스티커 방향·조명은 별도 난도 축으로 둔다.', h: ['B의 유효한 외형 기억', '유사품 없음', '유사품 있음'], r: [
+      ['있음', '<span class="m">E</span>', '<span class="m">E + C</span> (기본값 기준, 조건에 따라 I 생략)'],
+      ['없음', '<span class="m">E</span>', '<span class="m big">E + C + I</span> 또는 요청']] },
+    meas: '불필요 전송 bytes, 요청 왕복 수와 대기 시간, 높은 추정·미보유 비율(결정 직전 기준), 외부 정답 기준 성공률',
+    note: '(b)의 착각은 epoch가 실린 ACK가 올 때 드러난다. 목표는 빨리 드러내고 싸게 회복하는 것이다. 재시작과 캐시 초기화는 다른 사건이라 <code>boot_id</code>와 <code>memory_epoch</code>를 따로 둔다. 제안 고유의 효과는 통신 밖 관측을 다루는 ③B에서 검증한다.'
+  }
+},
+{
+  name: '지나가며 얻은 지식',
+  goal: 'A가 B를 보지 못해도 경로와 시간으로 B가 무엇을 봤을지 추정한다. ③A는 작은 N이라 추정이 달라도 전송이 같게 나오는 설명용 예제이고, ③B는 지나가며 본 외형이 crop(30 KiB) 생략을 좌우하는 주 실험이다.',
+  chips: [['k-obs', '관측 착각'], ['', '③A 1단계 · ③B 2단계'], ['', '시뮬: pass_by_N · pass_by_abnormal · pass_by_appearance']],
+  items: [['b_N(S2,Q)', 'S2에서 Q의 정상 배치']],
+  variants: [
+    { key: 'a-clear', label: 'A · 시야 확보', init: '시작 상태: ①의 e1 처리 중(같은 시간대). B는 S2를 모름. S2에는 Q만 있음.', steps: [
+      { t: 'B가 출발', d: 'B가 e1을 처리하러 S1로 출발한다. A는 S3 쪽을 돌고 있어서 B를 보지 못한다.', a: 'S3 쪽 순찰 · B가 안 보임', b: 'S1로 출발', A: 'O3', B: 'H', o: { P: 'mis', Q: 'up' }, occ: false, bel: [0], tru: [0], dec: null, ev: null },
+      { t: 'B가 S2 옆을 지나감', d: 'A는 같은 지도와 경로 계획기로 B가 S2 옆을 지난다고 예측한다. 통과 전후 순찰에서 S2가 정상이었으므로 B가 본 것은 정상 배치다. 여기서 쓰는 p_acq는 ‘이 경로로 지날 때 B가 Q의 배치를 보고 저장할 확률’이고, 예시값 0.72는 시야에 들어올 확률 0.8 × 저장에 성공할 확률 0.9다(보정 실험에서 얻을 값). 통과가 확실하므로 b_N = 0.72.', a: '경로 예측 → b_N(S2,Q) = 0.72', b: 'S2 옆 통과 · Q를 봄', B: 'P2', bel: [0.72], tru: [1] },
+      { t: 'Q가 넘어짐', d: 'B가 S1 작업을 마친 뒤 작업자와 부딪혀 Q가 넘어진다. A가 S2에서 발견하고 사건 e3을 확정한다.', env: 'Q가 넘어짐', a: '전도 발견 · 사건 e3', b: 'S1 작업을 마치고 H로 복귀', A: 'O2', B: 'H', o: { P: 'ok', Q: 'down' }, ev: 'confirmed' },
+      { t: '무엇을 보낼지 결정', d: 'N을 빼면 B가 N을 모를 확률(1 − 0.72 = 0.28)만큼 요청 왕복이 생긴다. 왕복 비용을 1로 두면 기대 손실은 0.28이다. N을 넣는 비용은 40 B로 약 0.004다. 그래서 N을 넣는다. N을 빼는 편이 싸지려면 B가 N을 가졌을 확률이 0.996을 넘어야 하므로, 작은 항목은 추정과 관계없이 거의 항상 넣게 된다. 보내기 직전 추정(0.72)은 평가용으로 남고, ACK 뒤 현재 값은 1이다.', a: 'E + N 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N)', b: 160 }, ACK], dec: { bel: [0.72], tru: [1] }, bel: [1], tru: [1], ev: 'accepted' },
+      { t: '복구와 평가', d: 'B가 Q를 지정 자세로 세우고, A가 재검증으로 닫는다. 평가에서는 보내기 직전 기록(추정 0.72, 실제 보유)을 다른 사례와 모아 신뢰도 곡선을 그린다. 추정이 잘 맞는지는 이 곡선으로 판단한다.', env: 'Q 세워짐', a: 'RESULT → 재검증 성공', b: 'S2로 이동 → Q 세움 → ok', B: 'S2d', A: 'O3', o: { P: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] },
+    { key: 'a-occ', label: 'A · 가림', init: '시작 상태: 시야 확보와 같음. S2와 B의 경로 사이에 칸막이(A의 순찰 위치에서는 안 보임).', steps: [
+      { t: 'B가 출발', d: 'B가 S1로 출발한다. 칸막이는 A의 순찰 위치에서 보이지 않으므로 추정기 입력 밖에 있다.', env: '칸막이 설치', a: 'S3 쪽 순찰 · B가 안 보임', b: 'S1로 출발', A: 'O3', B: 'H', o: { P: 'mis', Q: 'up' }, occ: true, bel: [0], tru: [0], dec: null, ev: null },
+      { t: 'B가 S2 옆을 지나감', d: '칸막이에 가려 B는 Q를 보지 못한다. A는 같은 근거로 0.72로 올린다. 추정(0.72)과 실제(0)의 차이는 평가 때 드러난다.', a: '경로 예측 → b_N(S2,Q) = 0.72', b: 'S2 옆 통과 · 칸막이에 가려 못 봄', B: 'P2', bel: [0.72], tru: [0], tag: { k: 'k-obs', t: '관측 착각 · 아직 숨어 있음' } },
+      { t: 'Q가 넘어짐', d: 'B가 S1 작업을 마친 뒤 Q가 넘어진다. A가 사건 e3을 확정한다.', env: 'Q가 넘어짐', a: '전도 발견 · 사건 e3', b: 'S1 작업을 마치고 H로 복귀', A: 'O2', B: 'H', o: { P: 'ok', Q: 'down' }, ev: 'confirmed' },
+      { t: '무엇을 보낼지 결정', d: '시야 확보와 똑같이 N을 넣는다. B는 N을 받아 저장하므로 ACK 뒤 현재 상태는 “보유”다. 결정 직전 기록(0.72 / 미보유)은 그대로 남는다.', a: 'E + N 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N)', b: 160 }, ACK], dec: { bel: [0.72], tru: [0] }, bel: [1], tru: [1], ev: 'accepted' },
+      { t: '복구와 평가', d: 'B는 문제없이 복구한다. 평가에서 보내기 직전 기록(추정 0.72, 실제 0)이 ‘높은 추정·미보유’ 1건으로 집계되고, 다음 보정 주기에 이 경로의 p_acq를 다시 추정하는 데 쓰인다. N을 함께 보냈으므로 작업은 정상적으로 끝났다.', env: 'Q 세워짐', a: 'RESULT → 재검증 성공', b: 'S2로 이동 → Q 세움 → ok', B: 'S2d', A: 'O3', o: { P: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed', tag: { k: 'k-obs', t: '결정 직전 기록에서 집계' } }
+    ] },
+    { key: 'a-abn', label: 'A · 이상 중 통과', init: '시작 상태: 시야 확보와 같음. 단, B가 지나가기 직전에 Q가 이미 넘어져 있음(A는 아직 모름).', steps: [
+      { t: 'Q가 넘어진 상태에서 B가 출발', d: '작업자와 부딪혀 Q가 넘어졌다. A는 S3 쪽을 돌고 있어 아직 모른다. B가 S1로 출발한다.', env: 'Q가 넘어짐 (아무도 모름)', a: 'S3 쪽 순찰 · 모름', b: 'S1로 출발', A: 'O3', B: 'H', o: { P: 'mis', Q: 'down' }, occ: false, bel: [0], tru: [0], dec: null, ev: null },
+      { t: 'B가 넘어진 Q를 보고 지나감', d: 'B는 S2의 스냅샷을 저장하지만 그것은 이상 상태다. A는 통과를 예측하되, 통과 뒤 순찰에서 S2가 정상인지 확인될 때까지 b_N 반영을 보류한다. B의 기록에서도 이 스냅샷은 정상 배치로 쓸 수 없는 값이다(K = 0).', a: '통과 예측 · 정상 확인 대기(보류)', b: 'S2 옆 통과 · 넘어진 Q 저장', B: 'P2', tag: { k: 'k-obs', t: '정상 배치 확인 규칙' } },
+      { t: 'A가 전도를 발견 → 근거에서 제외', d: 'A가 S2에서 전도를 발견해 사건 e3을 확정한다. “통과 전후 모두 정상”이라는 조건이 깨졌으므로 이 통과는 정상 배치 근거에서 제외하고 b_N은 0으로 둔다.', a: '전도 발견 · 통과 근거 제외 (b_N 0)', b: 'S1 작업을 마치고 H로 복귀', A: 'O2', B: 'H', o: { P: 'ok', Q: 'down' }, ev: 'confirmed' },
+      { t: 'N을 넣어 보냄', d: 'b_N이 0이므로 E + N을 보낸다. 지나가며 본 것을 그대로 믿는 낙관적 추정이었다면 E만 보냈고, B는 넘어진 모습을 정상으로 알고 복구할 수 있었다.', a: 'E + N 전송 → ACK', b: '받고 ACK · 이전 스냅샷보다 N 우선', ms: [{ d: 'AB', l: 'TASK(E + N)', b: 160 }, ACK], dec: { bel: [0], tru: [0] }, bel: [1], tru: [1], ev: 'accepted', tag: { k: 'k-key', t: '규칙이 착각을 막음' } },
+      { t: '복구와 재검증', d: 'B가 받은 N대로 Q를 세우고 A가 재검증으로 닫는다.', env: 'Q 세워짐', a: 'RESULT → 재검증 성공', b: 'S2로 이동 → Q 세움 → ok', B: 'S2d', A: 'O3', o: { P: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] },
+    { key: 'b-clear', label: 'B · 시야 확보', items: [['b_N(S2,Q)', 'S2에서 Q의 정상 배치'], ['b_I(Q)', 'Q의 외형 기억 (스냅샷)']], init: '시작 상태: 2단계. S2에 Q와 스티커만 다른 Q′. B는 S2를 모름.', steps: [
+      { t: 'B가 출발', d: 'B가 S1로 출발한다. A는 B를 보지 못한다.', a: 'S3 쪽 순찰 · B가 안 보임', b: 'S1로 출발', A: 'O3', B: 'H', o: { P: 'mis', Q: 'up', Qp: 'ok' }, occ: false, bel: [0, 0], tru: [0, 0], dec: null, ev: null },
+      { t: 'B가 S2 옆을 지나감', d: 'B가 S2의 스냅샷(Q의 위치와 외형)을 저장할 기회다. 두 항목은 한 번 보면 같이 얻으므로 둘 다 p_acq = 0.72(③A와 같은 예시값)로 올린다. 스냅샷이 정상 배치라는 근거는 A가 통과 전후 순찰에서 S2를 정상으로 확인한 것이다.', a: '경로 예측 → b_N = b_I = 0.72', b: 'S2 옆 통과 · 스냅샷 저장', B: 'P2', bel: [0.72, 0.72], tru: [1, 1] },
+      { t: 'Q가 밀림', d: 'Q가 Q′ 쪽으로 밀린다. 위치만으로는 둘을 가르기 어렵다. A가 사건 e3을 확정한다.', env: 'Q가 Q′ 쪽으로 밀림', a: '발견 · 사건 e3', b: 'S1 작업을 마치고 H로 복귀', A: 'O2', B: 'H', o: { P: 'ok', Q: 'mis', Qp: 'ok' }, ev: 'confirmed' },
+      { t: 'crop을 빼고 보냄', d: 'B가 스냅샷을 가졌을 확률 0.72로 기대비용을 계산하면 crop을 뺀 E + N + C는 1.51, crop을 넣은 E + N + C + I는 3.68이다. crop을 빼면 B가 현장에서 crop을 요청하는 일이 평균 0.25회 생기지만, 그 기대 손실이 30 KiB를 매번 먼저 보내는 비용보다 작다. Confirmed Cache는 외형을 메시지로 받은 기록이 없어 30.2 KiB를 보낸다.', a: 'E + N + C 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N + C)', b: 200 }, ACK], dec: { bel: [0.72, 0.72], tru: [1, 1] }, bel: [1, 0.72], tru: [1, 1], ev: 'accepted', tag: { k: 'k-key', t: 'crop 생략 결정' } },
+      { t: 'B가 스냅샷으로 구분', d: 'B는 C 반경 안 후보 중 스냅샷과 맞는 Q를 골라 지정 위치로 되돌리고 보고한다.', env: 'Q 제자리로', a: 'RESULT 받음', b: '스냅샷으로 구분 → 복구 → ok', B: 'S2d', A: 'O3', o: { P: 'ok', Q: 'up', Qp: 'ok' }, ms: [OK], ev: 'result_reported' },
+      { t: '재검증', d: 'A가 확인하고 닫는다. 지나가며 본 증거(0.72)와 직접 다룬 증거(q_learn 0.9)를 독립 증거로 합치면, 둘 다 실패할 확률이 0.28 × 0.1 = 0.028이므로 b_I ≈ 0.97.', a: '재검증 성공 → b_I ≈ 0.97', b: 'S2에서 작업 마침', bel: [1, 0.97], ev: 'verified_closed', tag: { k: 'k-key', t: 'Cache 대비 30 KiB 절감' } }
+    ] },
+    { key: 'b-occ', label: 'B · 가림', items: [['b_N(S2,Q)', 'S2에서 Q의 정상 배치'], ['b_I(Q)', 'Q의 외형 기억 (스냅샷)']], init: '시작 상태: B · 시야 확보와 같음. 칸막이가 있음.', steps: [
+      { t: 'B가 출발', d: 'B가 S1로 출발한다. 칸막이는 추정기 입력 밖에 있다.', env: '칸막이 설치', a: 'S3 쪽 순찰 · B가 안 보임', b: 'S1로 출발', A: 'O3', B: 'H', o: { P: 'mis', Q: 'up', Qp: 'ok' }, occ: true, bel: [0, 0], tru: [0, 0], dec: null, ev: null },
+      { t: 'B가 S2 옆을 지나감', d: '칸막이에 가려 스냅샷을 얻지 못한다. A는 같은 근거로 0.72로 올린다.', a: '경로 예측 → b_N = b_I = 0.72', b: 'S2 옆 통과 · 못 봄', B: 'P2', bel: [0.72, 0.72], tru: [0, 0], tag: { k: 'k-obs', t: '관측 착각 · 아직 숨어 있음' } },
+      { t: 'Q가 밀림', d: 'Q가 Q′ 쪽으로 밀린다. A가 사건 e3을 확정한다.', env: 'Q가 Q′ 쪽으로 밀림', a: '발견 · 사건 e3', b: 'S1 작업을 마치고 H로 복귀', A: 'O2', B: 'H', o: { P: 'ok', Q: 'mis', Qp: 'ok' }, ev: 'confirmed' },
+      { t: 'crop을 빼고 보냄', d: '시야 확보와 같은 결정이다. A의 추정기는 칸막이 정보 없이 계산한다.', a: 'E + N + C 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N + C)', b: 200 }, ACK], dec: { bel: [0.72, 0.72], tru: [0, 0] }, bel: [1, 0.72], tru: [1, 0], ev: 'accepted' },
+      { t: '현장에서 외형 요청', d: 'B의 반경 안에 후보가 둘이고 외형 기억이 없으므로 B는 crop을 요청한다. A는 b_I를 0으로 내리고, 이 요청을 ‘추정이 틀린 생략(요청으로 회복)’으로 기록한다.', a: '요청 받음 → b_I ← 0', b: '후보 2개 · 외형 없음 → 요청', B: 'S2d', A: 'O3', ms: [{ d: 'BA', l: 'INFO_REQUEST(I · missing)', b: 60 }], bel: [1, 0], ev: 'needs_info', tag: { k: 'k-obs', t: '관측 착각 · 요청으로 드러남' } },
+      { t: 'crop 보충', d: 'A가 crop을 보낸다. ACK 뒤 b_I는 r_crop으로 둔다. r_crop은 받은 crop으로 B가 표적을 알아볼 수 있을 확률이고 예시값은 0.95다.', a: 'INFO_RESPONSE(I)', b: '받고 ACK', ms: [{ d: 'AB', l: 'INFO_RESPONSE(I)', b: 30760 }, ACK], bel: [1, 0.95], tru: [1, 1], ev: 'accepted' },
+      { t: '복구와 평가', d: 'B가 복구하고 A가 재검증으로 닫는다. 이 분기의 대가는 왕복 1회, B의 대기, 그리고 결국 보낸 30 KiB다. 보내기 직전 기록 두 항목은 다음 보정 주기에 반영된다.', env: 'Q 제자리로', a: 'RESULT → 재검증 성공', b: 'crop으로 구분 → 복구 → ok', o: { P: 'ok', Q: 'up', Qp: 'ok' }, ms: [OK], ev: 'verified_closed' }
+    ] }
+  ],
+  extra: {
+    cmp: { h: ['방식', '③A (N)', '③A 이상 중 통과', '③B 시야 확보', '③B 가림'], r: [
+      ['<strong>제안</strong>', '<span class="m pick">E + N</span>', '<span class="m pick">E + N</span> (통과 근거 제외)', '<span class="m pick">E + N + C</span> 200 B로 성공', '<span class="m">E + N + C</span> → 현장 요청 1회 + 30 KiB'],
+      ['Confirmed Cache (+ Result)', '<span class="m">E + N</span>', '<span class="m">E + N</span>', '<span class="m big">E + N + C + I</span> 30.2 KiB', '<span class="m big">E + N + C + I</span> 30.2 KiB'],
+      ['낙관적 추정 (지나갔으면 안다)', '<span class="m">E</span>', '<span class="m">E</span> → 넘어진 모습을 정상으로 복구할 위험', '<span class="m">E + C</span>', '<span class="m">E + C</span> → 출발 전 N 요청 + 현장 I 요청 (왕복 2회)']], me: 0 },
+    meas: 'Brier score와 신뢰도 곡선(결정 직전 기록, 경로·가림 조건별), 높은 추정·미보유 비율, crop 생략률과 생략 실패율(요청 회복 / 오조작), 총 KiB',
+    note: '③A는 추정이 달라도 전송 판단이 같게 나오는 설명용 예제다. 통신 절감의 주 증거는 ③B이고, crop을 빼는 전환 구간은 실측한 p_acq, 매칭률, 비용으로 찾는다. 가림이 보정 데이터에는 없고 평가에만 있는 경우는 분포 변화 시험으로 따로 보고한다.'
+  }
+},
+{
+  name: '식별 모호함과 미보고 오조작',
+  goal: '헷갈리는 장면에서 필요한 식별 정보를 보내는지, B가 확신하고 틀린 경우(B가 요청할 단서가 없는 실패)를 재검증으로 잡는지 본다. B가 표적을 고르기 어려운 경우(기본, (b))와 A 자신도 표적이 불확실한 경우((c))를 나눈다.',
+  chips: [['k-suff', '충분성 착각'], ['k-perf', '수행 착각'], ['', '2단계'], ['', '시뮬: clustered · overconfident_pose · sender_uncertain · moved_again']],
+  items: [['b_N(S1,P)', 'S1에서 P의 정상 위치'], ['b_I(P)', 'P의 외형 기억']],
+  variants: [
+    { key: 'base', label: '(a) 기본', init: '시작 상태: B는 S1과 P를 모름. A는 위치 오차를 맞게 안다(σ 3 cm, κ = 1).', steps: [
+      sc4First(),
+      { t: '위치·crop을 함께 보냄', d: 'B는 P를 본 적이 없고, A의 위치 오차(σ 3 cm)가 두 물체 간격(4 cm)에 비해 크다. 이 조건에서 crop까지 넣은 E + N + C + I의 기대비용이 3.68로 가장 낮다. crop을 빼면 B가 대부분 현장에서 다시 요청하게 된다(E + N + C는 3.93). 이 선택에도 B가 확신하고 틀릴 확률 약 2.3%, 재관측 뒤에도 가리지 못하는 미해결 약 2.7%가 남는다. ACK 뒤 b_I는 r_crop 0.95.', a: 'E + N + C + I 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N + C + I)', b: 30920 }, ACK], dec: { bel: [0, 0], tru: [0, 0] }, bel: [1, 0.95], tru: [1, 1], ev: 'accepted' },
+      { t: 'B가 crop으로 찾아 복구', d: '가능한 성공 경로 하나다. B는 crop과 맞는 후보를 골라 P를 지정 위치로 옮기고 보고한다.', env: 'P 제자리로', a: 'RESULT 받음 · 값은 보류', b: 'crop 매칭 → 복구 → ok', B: 'S1d', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'result_reported' },
+      { t: '재검증', d: 'A가 P와 P′이 모두 제자리인 것을 확인하고 닫는다. 받은 crop(0.95)과 직접 다룬 증거(0.9)를 합치면 1 − 0.05 × 0.1 ≈ 0.99. 다음부터는 crop 없이 구분할 수 있다(②(c)로 이어짐).', a: '재검증 성공 → b_I ≈ 0.99', b: 'S1에서 작업 마침', bel: [1, 0.99], ev: 'verified_closed', tag: { k: 'k-key', t: '다음부터 crop 생략 가능' } }
+    ] },
+    { key: 'over', label: '(b) A의 오차 과소추정', init: '시작 상태: 기본과 같지만 A가 위치 오차를 1 cm로 알고 있다(실제 약 3 cm, κ = 3).', steps: [
+      sc4First(),
+      { t: 'crop 없이 보냄', d: 'A가 자기 위치 오차를 1 cm로 보면, 간격 4 cm에서 위치만으로 충분하다고 계산해 E + N + C(기대비용 0.41)를 고른다. 실제 오차가 3배(약 3 cm, κ = 3)면 같은 선택에서 B가 확신하고 틀릴 확률은 약 24%다.', a: 'E + N + C 전송 (σ 1 cm로 알림)', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N + C)', b: 200 }, ACK], dec: { bel: [0, 0], tru: [0, 0] }, bel: [1, 0], tru: [1, 0], ev: 'accepted' },
+      { t: 'B가 P′을 확신하고 옮김', d: '실제 오차가 커서 B의 반경(2 × 1 cm) 안에 P′만 들어왔다. B는 후보가 하나라고 판단해 P′을 P의 목표 위치로 옮기고 ok를 보고한다. B 입장에서는 요청할 단서가 없었다. B는 P′의 외형을 “P의 외형”으로 저장했으므로, 저장은 됐고(R = 1) 내용은 틀렸다(K = 0).', env: 'P′이 P의 자리로 옮겨짐', a: 'RESULT 받음 · 값은 보류', b: 'P′을 P로 판단 → 옮김 → ok', B: 'S1d', o: { P: 'mis', Pp: 'onP', Q: 'up' }, ms: [OK], ev: 'result_reported', tag: { k: 'k-perf', t: '수행 착각 · 아직 숨어 있음' } },
+      { t: '재검증 불일치', d: 'A가 보니 P는 그대로 벗어나 있고 P의 자리에 P′의 스티커가 보인다. 원인을 확정하기 전에 ID·실행 후 pose·시각을 모아 “잘못된 대상 조작”으로 판단한다. 증거가 부족했다면 unresolved로 남긴다. A의 위치 오차 모델에는 κ 증거를 더한다.', a: '재검증 불일치 → 사건 재개(attempt 2)', b: 'S1에서 대기', ev: 'reopened', tag: { k: 'k-perf', t: '수행 착각 · 재검증으로 드러남' } },
+      { t: '두 대상을 묶어 다시 보냄', d: '대상이 둘이므로 targets[]에 P(N, C, I)와 P′(정상 위치 N′, 현재 위치 C′)를 따로 넣는다. P′을 제자리로 돌리려면 B에게 P′의 정상 위치 N′도 필요하다. 새 crop을 받으면 잘못 저장한 P의 외형은 새 appearance_version으로 바뀐다.', a: 'TASK v2 전송 → ACK', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK v2 · P(N,C,I) + P′(N′,C′)', b: 31000 }, ACK], dec: { bel: [1, 0], tru: [1, 0] }, bel: [1, 0.95], tru: [1, 1], ev: 'accepted' },
+      { t: '둘 다 복구하고 재검증', d: 'B가 P′을 돌려놓고 P를 지정 위치로 옮긴다. 미보고 오조작 한 번의 대가는 재검증까지 걸린 시간, 두 번의 조작, 결국 보낸 crop이다. 누적 전송량을 기본 분기와 비교하면 그 차이가 보인다.', env: 'P, P′ 모두 제자리로', a: 'RESULT → 재검증 성공', b: 'P′ 돌려놓기 → P 복구 → ok', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] },
+    { key: 'sender', label: '(c) A도 표적이 불확실', init: '시작 상태: 기본과 같지만 A의 정면 시점에서는 스티커가 보이지 않는다.', steps: [
+      sc4First('detected', '2단계. P와 P′ 중 하나가 벗어났는데, S1 정면에서는 스티커가 보이지 않아 A도 어느 쪽이 P인지 모른다. 이 상태에서 crop을 보내면 잘못 붙인 라벨이 그대로 퍼질 수 있다.'),
+      { t: '보내기 전에 A가 재관측', d: '이 경우의 해법은 A의 재관측이다. A가 윗면이 보이는 다른 시점으로 옮겨 다시 본다.', a: '다른 시점으로 이동 → 재관측', b: 'H에서 대기', A: 'O1b', nc: true, ev: 'detected' },
+      { t: '표적 확정 뒤 기본과 같이 보냄', d: '윗면 스티커로 P를 확정한 뒤 기본 분기와 같은 결정을 한다. 다른 시점에서도 확정하지 못하면 unresolved로 운영자에게 넘긴다.', a: '사건 확정 → E + N + C + I 전송', b: '받고 ACK', ms: [{ d: 'AB', l: 'TASK(E + N + C + I)', b: 30920 }, ACK], dec: { bel: [0, 0], tru: [0, 0] }, bel: [1, 0.95], tru: [1, 1], ev: 'accepted' },
+      { t: '복구와 재검증', d: 'B가 복구하고 A가 재검증으로 닫는다.', env: 'P 제자리로', a: 'RESULT → 재검증 성공', b: 'crop 매칭 → 복구 → ok', B: 'S1d', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] },
+    { key: 'moved', label: '(d) 보고 후 재이동', items: [['b_N(S1,P)', 'S1에서 P의 정상 위치'], ['b_C(P)', 'P의 현재 위치 (version)'], ['b_I(P)', 'P의 외형 기억']], init: '시작 상태: 기본과 같음. B가 이동하는 동안 작업자가 P를 다시 옮긴다.', steps: [
+      sc4First(),
+      { t: '위치·crop을 함께 보냄', d: '기본 분기와 같은 결정이다(E + N + C + I, 기대비용 3.68). C는 version 1로 보낸다.', a: 'E + N + C + I 전송 → ACK', b: '받고 ACK · S1로 출발', ms: [{ d: 'AB', l: 'TASK(E + N + C + I) v1', b: 30920 }, ACK], dec: { bel: [0, 0, 0], tru: [0, 0, 0] }, bel: [1, 1, 0.95], tru: [1, 1, 1], ev: 'accepted' },
+      { t: 'B가 오는 동안 P가 또 옮겨짐', d: '작업자가 P를 다시 옮긴다. A는 S3 쪽에 있어 보지 못했다. B가 가진 현재 위치(C v1)는 이제 낡았다(K = 0). A가 이것을 봤다면 조작 시작 전이므로 POSE_UPDATE(version 2)를 보냈을 것이다.', env: '작업자가 P를 다시 옮김', a: 'S3 쪽 순찰 · 모름', b: 'S1로 이동 중', A: 'O3', B: 'P2', tru: [1, 0, 1], ev: 'executing', tag: { k: 'k-persist', t: '현재 위치가 낡음' } },
+      { t: 'B가 도착해 찾지 못함', d: 'B의 반경 안에는 P′만 있고 crop과도 맞지 않는다. B는 확신하고 고르는 대신 not_found를 보고한다. A는 b_C를 0으로 내리고, 가림·인식 오류·좌표계 문제인지도 함께 확인한다.', a: 'not_found 받음 → b_C ← 0 · 원인 진단', b: '반경 안 후보 불일치 → not_found', B: 'S1d', ms: [{ d: 'BA', l: 'RESULT not_found', b: 40 }], bel: [1, 0, 0.95], ev: 'needs_info' },
+      { t: 'A가 다시 보고 위치를 갱신', d: 'A가 S1으로 가서 P의 새 위치를 찾고 POSE_UPDATE(version 2)를 보낸다. 같은 사건의 갱신이므로 event_id는 그대로 두고 version과 attempt_id만 올린다.', a: '재관측 → POSE_UPDATE v2', b: '받고 ACK · 새 위치로 탐색', A: 'O1', ms: [{ d: 'AB', l: 'POSE_UPDATE(C) v2', b: 80 }, ACK], bel: [1, 1, 0.95], tru: [1, 1, 1], ev: 'accepted' },
+      { t: '복구와 재검증', d: 'B가 P를 지정 위치로 옮기고 A가 재검증으로 닫는다. 이 분기의 추가 비용은 B의 헛걸음, 왕복 1회(120 B), A의 재관측 시간이다.', env: 'P 제자리로', a: 'RESULT → 재검증 성공', b: 'P 복구 → ok', o: { P: 'ok', Pp: 'ok', Q: 'up' }, ms: [OK], ev: 'verified_closed' }
+    ] }
+  ],
+  extra: {
+    cmp: { h: ['방식', '(a) 기본', '(b) A의 오차 과소추정', '(d) 보고 후 재이동'], r: [
+      ['<strong>제안</strong>', '<span class="m big">E + N + C + I</span> (오조작 2.3%, 미해결 2.7% 계산)', '<span class="m">E + N + C</span> → 오조작 → 재검증 → 재작업', 'not_found → 재관측 → POSE_UPDATE (모든 방식 공통)'],
+      ['Event-gated Full Payload', '<span class="m big">E + N + C + I</span>', '<span class="m big">E + N + C + I</span> (crop이 있어 위험이 낮음)', '공통'],
+      ['Scene-only rule', '<span class="m big">E + N + C + I</span> (B 기억이 없어 제안과 같음)', '<span class="m">E + N + C</span> (같은 σ 모델이면 같은 실수)', '공통'],
+      ['Minimal Push + Pull', '<span class="m">E</span> → 출발 전 N·식별 정보 요청 (왕복 1회)', '<span class="m">E</span> → 요청 → C + I로 응답하면 안전', '공통'],
+      ['Fixed Text / Fixed State', '설계서 v0.1 시뮬 보고 성공률 0.30 / 0.36', '—', '—']], me: 0 },
+    meas: '외부 정답 기준 성공률과 잘못된 대상 조작률, crop 전송 횟수, 재검증으로 오조작을 잡은 비율과 걸린 시간, κ(실제 오차 ÷ 알린 오차)의 실측 분포',
+    note: '④의 초점은 전체 정보를 보내도 남는 오류와, A 자신의 오차 추정이 틀릴 때 생기는 실패 경로다. 같은 기종이라 A의 crop과 B의 화면을 맞추기 쉽고, 보는 거리와 각도 차이에 대비해 스티커는 윗면과 정면에 모두 붙인다.'
+  }
+}
+];
+</script>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var stepper = $('stepper');
+  if (!stepper || typeof SCENARIOS === 'undefined') return;
+
+  /* 배치도 좌표 (viewBox 680 x 380) */
+  var POS = { H: [70, 318], P2: [196, 204], S1d: [500, 142], S2d: [345, 276], O1: [646, 140], O1b: [420, 66], O2: [486, 206], O3: [646, 262] };
+  var BLOCK = [[464, 28, 182, 78], [254, 164, 182, 78], [464, 284, 182, 78]];
+  var TRAIL = {
+    P2: 'M70,318 L196,300 L196,204',
+    S1d: 'M70,318 L196,300 L196,142 L500,142',
+    S2d: 'M70,318 L345,318 L345,276'
+  };
+  var KEEP = ['A', 'B', 'o', 'bel', 'tru', 'occ', 'ev', 'dec'];
+  var EV = {
+    detected: '표적 미확정', confirmed: '사건 확정', sent: '보냄 · ACK 대기', accepted: '수락됨', needs_info: '정보 부족',
+    executing: '작업 중', result_reported: '완료 보고 · 검증 전', reopened: '검증 실패 · 재개', verified_closed: '검증 완료', unresolved: '미해결'
+  };
+  var state = { sc: 0, v: 0, i: 0 };
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fmtB(b) { return b < 1024 ? b + ' B' : (b / 1024).toFixed(2) + ' KiB'; }
+  function tw(s, size) { var w = 0; for (var k = 0; k < s.length; k++) w += s.charCodeAt(k) > 0x2e80 ? 1.0 : 0.61; return w * size; }
+  function resolve(list) {
+    var out = [], cur = {};
+    list.forEach(function (s) {
+      var r = {};
+      KEEP.forEach(function (k) { if (s[k] !== undefined) cur[k] = s[k]; r[k] = cur[k]; });
+      ['t', 'd', 'env', 'a', 'b', 'ms', 'nc', 'tag'].forEach(function (k) { r[k] = s[k]; });
+      r.decNow = s.dec !== undefined && s.dec !== null;
+      out.push(r);
+    });
+    return out;
+  }
+  function variant() { return SCENARIOS[state.sc].variants[state.v]; }
+  function items() { return variant().items || SCENARIOS[state.sc].items; }
+  function steps() { return resolve(variant().steps); }
+
+  /* 그리기 도우미 */
+  function cube(x, y, cls, stk, lbl, bad) {
+    var r = '<rect class="' + cls + '" x="' + (x - 10) + '" y="' + (y - 10) + '" width="20" height="20" rx="3"/>';
+    if (stk) r += '<circle class="o-stk" cx="' + (x + 4) + '" cy="' + (y - 4) + '" r="3.2"/>';
+    if (lbl) r += '<text class="' + (bad ? 'o-bad' : 'o-lbl') + '" x="' + x + '" y="' + (y + 25) + '" text-anchor="middle">' + lbl + '</text>';
+    return r;
+  }
+  function cyl(x, y, stk, lbl, bad) {
+    var r = '<circle class="o-blue" cx="' + x + '" cy="' + y + '" r="12"/>';
+    if (stk) r += '<circle class="o-stk" cx="' + (x + 4) + '" cy="' + (y - 4) + '" r="3.2"/>';
+    if (lbl) r += '<text class="' + (bad ? 'o-bad' : 'o-lbl') + '" x="' + x + '" y="' + (y + 29) + '" text-anchor="middle">' + lbl + '</text>';
+    return r;
+  }
+  function ghost(x, y, round) {
+    return round ? '<circle class="o-ghost" cx="' + x + '" cy="' + y + '" r="12"/>'
+      : '<rect class="o-ghost" x="' + (x - 10) + '" y="' + (y - 10) + '" width="20" height="20" rx="3"/>';
+  }
+  function pill(cx, cy, text, kind) {
+    var w = tw(text, 12.5) + 18, x = Math.min(Math.max(cx - w / 2, 14), 666 - w), y = cy - 12;
+    return '<rect class="pill ' + kind + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="24" rx="12"/>' +
+      '<text class="pill-t ' + kind + '" x="' + (x + w / 2).toFixed(1) + '" y="' + (y + 16.5).toFixed(1) + '" text-anchor="middle">' + esc(text) + '</text>';
+  }
+  var placed = [];
+  function overlap(a, b) { return a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3]; }
+  function hits(r, from, to) {
+    var boxes = BLOCK.concat(placed);
+    [POS[from], POS[to]].forEach(function (p) { boxes.push([p[0] - 24, p[1] - 24, 48, 48]); });
+    for (var k = 0; k < boxes.length; k++) if (overlap(r, boxes[k])) return true;
+    return false;
+  }
+  function arrow(from, to, m) {
+    var a = POS[from], b = POS[to];
+    var dx = b[0] - a[0], dy = b[1] - a[1], len = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / len, uy = dy / len;
+    var s = [a[0] + ux * 22, a[1] + uy * 22], e = [b[0] - ux * 24, b[1] - uy * 24];
+    var ab = m.d === 'AB';
+    var bend = Math.min(70, 28 + len * 0.1);
+    var nx = -uy, ny = ux;
+    var up = ny < 0 ? 1 : -1;
+    var sign = ab ? up : -up;          /* A→B는 위로, B→A는 아래로 휜다 */
+    var c = [(s[0] + e[0]) / 2 + nx * bend * sign, (s[1] + e[1]) / 2 + ny * bend * sign];
+    var cls = (ab ? 'm-ab' : 'm-ba') + (m.lost ? ' lost' : '');
+    var h = '<path class="' + cls + '" d="M' + s[0].toFixed(1) + ',' + s[1].toFixed(1) + ' Q' + c[0].toFixed(1) + ',' + c[1].toFixed(1) + ' ' + e[0].toFixed(1) + ',' + e[1].toFixed(1) + '"' + (m.lost ? '' : ' marker-end="url(#' + (ab ? 'ar-ab' : 'ar-ba') + ')"') + '/>';
+    if (m.lost) { /* 받는 쪽 가까이(t = 0.78)에 ✕ 표시 */
+      var xt = 0.78, xu = 1 - xt;
+      var xx = xu * xu * s[0] + 2 * xu * xt * c[0] + xt * xt * e[0], xy = xu * xu * s[1] + 2 * xu * xt * c[1] + xt * xt * e[1];
+      h += '<circle class="lost-bg" cx="' + xx.toFixed(1) + '" cy="' + xy.toFixed(1) + '" r="9"/><text class="lost-x" x="' + xx.toFixed(1) + '" y="' + (xy + 4.5).toFixed(1) + '" text-anchor="middle">✕</text>';
+      placed.push([xx - 10, xy - 10, 20, 20]);
+    }
+    var text = m.l + ' · ' + fmtB(m.b) + (m.lost ? ' · 유실' : ''), pw = tw(text, 12.5) + 18;
+    var ts = [0.5, 0.4, 0.6, 0.3, 0.7], offs = [0, 34, 64, 96, -36, -66, 128], best = null, found = false;
+    for (var oi = 0; oi < offs.length && !found; oi++) {
+      for (var q = 0; q < ts.length; q++) {
+        var t = ts[q], u = 1 - t;
+        var px = u * u * s[0] + 2 * u * t * c[0] + t * t * e[0] + nx * sign * offs[oi];
+        var py = u * u * s[1] + 2 * u * t * c[1] + t * t * e[1] + ny * sign * offs[oi];
+        if (px - pw / 2 < 12 || px + pw / 2 > 668 || py < 20 || py > 360) continue;
+        if (!best) best = [px, py];
+        if (!hits([px - pw / 2, py - 12, pw, 24], from, to)) { best = [px, py]; found = true; break; }
+      }
+    }
+    if (!best) best = [(s[0] + e[0]) / 2, (s[1] + e[1]) / 2];
+    placed.push([best[0] - pw / 2, best[1] - 12, pw, 24]);
+    return { path: h, label: pill(best[0], best[1], text, m.lost ? 'n' : (ab ? 'a' : 'b')) };
+  }
+  function changedSpots(s, prev) {
+    var o = s.o || {}, p = (prev && prev.o) || {}, out = {};
+    if (!prev) { if (o.P === 'mis') out.S1 = 1; if (o.Q === 'down' || o.Q === 'mis') out.S2 = 1; return out; }
+    if (o.P !== p.P || o.Pp !== p.Pp) out.S1 = 1;
+    if (o.Q !== p.Q || o.Qp !== p.Qp) out.S2 = 1;
+    return out;
+  }
+  function drawStage(s, prev) {
+    var hl = changedSpots(s, prev);
+    var h = '<defs>' +
+      '<marker id="ar-ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="f-ab"/></marker>' +
+      '<marker id="ar-ba" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="f-ba"/></marker></defs>';
+    h += '<rect class="s-arena" x="6" y="6" width="668" height="368" rx="14"/>';
+    [['S1', 470, 34], ['S2', 260, 170], ['S3', 470, 290]].forEach(function (sp) {
+      h += '<rect class="s-spot' + (hl[sp[0]] ? ' hl' : '') + '" x="' + sp[1] + '" y="' + sp[2] + '" width="170" height="66" rx="10"/>';
+      h += '<text class="s-name" x="' + (sp[1] + 12) + '" y="' + (sp[2] + 21) + '">' + sp[0] + '</text>';
+    });
+    [[538, 100], [562, 100], [328, 236], [352, 236], [538, 284], [562, 284]].forEach(function (t) {
+      h += '<rect class="s-tag" x="' + t[0] + '" y="' + t[1] + '" width="12" height="6"/>';
+    });
+    h += '<circle class="s-home" cx="70" cy="318" r="26"/><text class="s-lbl" x="70" y="362" text-anchor="middle">H · B 대기 위치</text>';
+    if (s.occ) h += '<line class="s-occ" x1="228" y1="164" x2="228" y2="242"/><text class="s-lbl" x="228" y="152" text-anchor="middle">칸막이</text>';
+    if (TRAIL[s.B] && s.B !== 'H') h += '<path class="s-trail" d="' + TRAIL[s.B] + '"/>';
+    var o = s.o || {};
+    if (o.P === 'mis') { if (o.Pp !== 'onP') h += ghost(526, 62); h += cube(610, 66, 'o-red', false, 'P 벗어남', true); }
+    else h += cube(526, 62, 'o-red', false, 'P');
+    if (o.Pp === 'ok') h += cube(562, 62, 'o-red', true, 'P′');
+    if (o.Pp === 'onP') { h += ghost(562, 62); h += cube(526, 62, 'o-red', true, 'P′ (잘못)', true); }
+    if (o.Q === 'down') h += '<rect class="o-blue" x="327" y="191" width="36" height="14" rx="6"/><text class="o-bad" x="345" y="225" text-anchor="middle">Q 넘어짐</text>';
+    else if (o.Q === 'mis') { h += ghost(345, 196, true); h += cyl(372, 196, false, 'Q 밀림', true); }
+    else h += cyl(345, 196, false, 'Q');
+    if (o.Qp === 'ok') h += cyl(406, 196, true, 'Q′');
+    h += cube(555, 322, 'o-green', false, 'R');
+    var labels = ''; placed = [];
+    (s.ms || []).forEach(function (m) {
+      var r = m.d === 'AB' ? arrow(s.A, s.B, m) : arrow(s.B, s.A, m);
+      h += r.path; labels += r.label;
+    });
+    var A = POS[s.A], B = POS[s.B];
+    h += '<circle class="rb-ring" cx="' + A[0] + '" cy="' + A[1] + '" r="22"/>';
+    h += '<circle class="rb-a" cx="' + A[0] + '" cy="' + A[1] + '" r="16"/><text class="rb-t" x="' + A[0] + '" y="' + (A[1] + 5) + '" text-anchor="middle">A</text>';
+    h += '<circle class="rb-b" cx="' + B[0] + '" cy="' + B[1] + '" r="16"/><text class="rb-t" x="' + B[0] + '" y="' + (B[1] + 5) + '" text-anchor="middle">B</text>';
+    h += labels;
+    if (s.nc) h += pill(A[0] - 70, A[1] + (A[1] < 120 ? 44 : -40), '보내지 않음 · 0 B', 'n');
+    if (s.env) {
+      var t = '현장 · ' + s.env, w = tw(t, 12.5) + 22;
+      h += '<rect class="env-p" x="18" y="18" width="' + w.toFixed(1) + '" height="26" rx="13"/><text class="env-t" x="' + (18 + w / 2).toFixed(1) + '" y="35.5" text-anchor="middle">' + esc(t) + '</text>';
+    }
+    return h;
+  }
+
+  /* 도면 아래 패널 */
+  function fmtV(v) { return v === null || v === undefined ? '—' : (v === 0 || v === 1 ? String(v) : v.toFixed(2)); }
+  function flagOf(est, tru) {
+    if (est === null || est === undefined || tru === null || tru === undefined) return '';
+    if (est >= 0.5 && tru === 0) return '<span class="flag bad">높은 추정·미보유</span>';
+    if (est < 0.5 && tru === 1) return '<span class="flag under">낮은 추정·보유</span>';
+    return '<span class="flag ok">기록과 일치</span>';
+  }
+  function renderBelief(list, i) {
+    var s = list[i], prev = i > 0 ? list[i - 1] : null, h = '';
+    items().forEach(function (it, k) {
+      var est = s.bel ? s.bel[k] : null, tru = s.tru ? s.tru[k] : null;
+      var chg = prev && prev.bel && prev.bel[k] !== est;
+      var w = est === null || est === undefined ? 0 : Math.round(est * 100);
+      h += '<div class="bel-row' + (chg ? ' chg' : '') + '"><div class="nm"><code>' + esc(it[0]) + '</code><span>' + esc(it[1]) + '</span></div>' +
+        '<div class="bel-vals"><span class="when">지금</span>추정 <b>' + fmtV(est) + '</b> 기록 <b>' + fmtV(tru) + '</b>' + flagOf(est, tru) + '</div>' +
+        '<div class="bel-bar"><i style="width:' + w + '%"></i></div>';
+      if (s.dec && s.dec.bel && s.dec.bel[k] !== null && s.dec.bel[k] !== undefined) {
+        var de = s.dec.bel[k], dt = s.dec.tru ? s.dec.tru[k] : null;
+        h += '<div class="bel-dec' + (s.decNow ? ' now' : '') + '"><span class="when">결정 직전</span>추정 <b>' + fmtV(de) + '</b> 기록 <b>' + fmtV(dt) + '</b>' + flagOf(de, dt) + '</div>';
+      }
+      h += '</div>';
+    });
+    $('st-belief').innerHTML = h;
+  }
+  function renderLedger(list, i) {
+    var s = list[i], step = 0, total = 0, h = '';
+    list.slice(0, i + 1).forEach(function (st) { (st.ms || []).forEach(function (m) { total += m.b; }); });
+    if (s.ms && s.ms.length) {
+      h += '<ul class="msgs">' + s.ms.map(function (m) {
+        step += m.b;
+        var ab = m.d === 'AB';
+        return '<li class="' + (m.lost ? 'lost' : '') + '"><span class="dir ' + (ab ? 'ab' : 'ba') + '">' + (ab ? 'A → B' : 'B → A') + '</span><span class="lbl">' + esc(m.l) + (m.lost ? ' <em>유실</em>' : '') + '</span><span class="sz">' + fmtB(m.b) + '</span></li>';
+      }).join('') + '</ul>';
+    } else {
+      h += '<p class="small muted">' + (s.nc ? '보내지 않음 · 0 B' : '이번 단계에 주고받은 메시지 없음') + '</p>';
+    }
+    h += '<div class="total"><span class="muted">이번 단계 <b>' + fmtB(step) + '</b> · 분기 누적</span><b>' + fmtB(total) + '</b></div>' +
+      '<p class="small muted">예시 크기의 합이다(실측은 serializer로 잰다).</p>';
+    $('st-ledger').innerHTML = h;
+  }
+  function renderExtra() {
+    var x = SCENARIOS[state.sc].extra, h = '';
+    function table(t, me) {
+      var r = '<div class="tw"><table class="wide"><thead><tr>' + t.h.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+      t.r.forEach(function (row, k) { r += '<tr' + (k === me ? ' class="me"' : '') + '>' + row.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; });
+      return r + '</tbody></table></div>';
+    }
+    if (x.cmp) h += '<h4>방식별 비교 <span class="small muted">모든 방식이 같은 사건 관리·B 규칙·재검증을 씀</span></h4>' + table(x.cmp, x.cmp.me);
+    if (x.fact) h += '<h4>2×2 요인 실험</h4><p class="small muted prose">' + x.fact.cap + '</p>' + table(x.fact, -1);
+    h += '<div class="vgrid"><div class="blk"><h4>측정할 것</h4><p>' + x.meas + '</p></div>' + (x.note ? '<div class="blk"><h4>참고</h4><p>' + x.note + '</p></div>' : '') + '</div>';
+    $('st-extra').innerHTML = h;
+  }
+
+  function anchor() { return 'sc' + (state.sc + 1) + '-v' + (state.v + 1) + '-s' + (state.i + 1); }
+  function save() { try { localStorage.setItem('cd-step4', JSON.stringify(state)); } catch (e) {} }
+  function valid(st) {
+    if (!st || typeof st !== 'object') return false;
+    var ok = [st.sc, st.v, st.i].every(function (n) { return typeof n === 'number' && isFinite(n) && n >= 0 && Math.floor(n) === n; });
+    if (!ok || !SCENARIOS[st.sc] || !SCENARIOS[st.sc].variants[st.v]) return false;
+    return st.i < SCENARIOS[st.sc].variants[st.v].steps.length;
+  }
+  function render() {
+    var sc = SCENARIOS[state.sc], vv = variant(), list = steps(), i = state.i, s = list[i], prev = i > 0 ? list[i - 1] : null;
+    $('st-name').textContent = sc.name;
+    $('st-goal').textContent = sc.goal;
+    $('st-init').textContent = vv.init || '';
+    $('st-chips').innerHTML = sc.chips.map(function (c) { return '<span class="chip ' + c[0] + '">' + esc(c[1]) + '</span>'; }).join('');
+    var seg = $('st-variants');
+    if (sc.variants.length > 1) {
+      seg.hidden = false;
+      seg.innerHTML = sc.variants.map(function (v, k) { return '<button type="button" data-v="' + k + '" aria-pressed="' + (k === state.v) + '">' + esc(v.label) + '</button>'; }).join('');
+    } else { seg.hidden = true; seg.innerHTML = ''; }
+    var svg = $('st-svg');
+    svg.innerHTML = drawStage(s, prev);
+    var msgTxt = (s.ms || []).map(function (m) { return (m.d === 'AB' ? 'A에서 B로 ' : 'B에서 A로 ') + m.l + (m.lost ? '(유실)' : ''); }).join(', ');
+    svg.setAttribute('aria-label', sc.name + ' 단계 ' + (i + 1) + ': ' + s.t + (s.env ? '. 현장: ' + s.env : '') + (msgTxt ? '. 메시지: ' + msgTxt : ''));
+    var cnt = '단계 ' + (i + 1) + ' / ' + list.length;
+    $('st-count').textContent = cnt;
+    $('st-count2').textContent = (i + 1) + ' / ' + list.length;
+    $('st-mini-t').textContent = s.t;
+    $('st-phase').innerHTML = vv.label ? '<span class="chip k-key">' + esc(vv.label) + '</span>' : '';
+    $('st-t').textContent = s.t;
+    $('st-d').textContent = s.d;
+    $('st-tag').innerHTML = s.tag ? '<span class="chip ' + s.tag.k + '">' + esc(s.tag.t) + '</span>' : '';
+    $('st-acts').innerHTML = '<div><span class="bot">A</span><span>' + esc(s.a || '') + '</span></div><div><span class="bot b">B</span><span>' + esc(s.b || '') + '</span></div>';
+    $('st-ev').innerHTML = '<span class="muted">사건 상태</span> ' + (s.ev ? '<code>' + esc(s.ev) + '</code> <span>' + esc(EV[s.ev] || '') + '</span>' : '<span class="muted">사건 없음</span>');
+    renderBelief(list, i);
+    renderLedger(list, i);
+    $('st-strip').innerHTML = list.map(function (st, k) {
+      return '<button type="button" data-i="' + k + '" class="' + (k < i ? 'done' : '') + '"' + (k === i ? ' aria-current="step"' : '') + '><span class="k">' + (k + 1) + '</span>' + esc(st.t) + '</button>';
+    }).join('');
+    $('st-prog-t').innerHTML = (i + 1) + ' / ' + list.length + ' <span class="anchor" title="이 화면의 주소 조각">#' + anchor() + '</span>';
+    var first = i === 0, last = i === list.length - 1, lastSc = state.sc === SCENARIOS.length - 1;
+    $('st-prev').disabled = first; $('st-prev2').disabled = first;
+    $('st-next').textContent = last ? (lastSc ? '끝' : '다음 시나리오') : '다음 단계';
+    $('st-next').disabled = last && lastSc; $('st-next2').disabled = last && lastSc;
+    $('st-live').textContent = cnt + '. ' + s.t + '. ' + (msgTxt || (s.nc ? '보내지 않음' : ''));
+    syncTabs();
+    renderExtra();
+    save();
+  }
+  function go(i) { var n = steps().length; state.i = Math.max(0, Math.min(n - 1, i)); render(); }
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.sc-tab'));
+  function syncTabs() {
+    var cur = String(state.sc);
+    tabs.forEach(function (t) {
+      var on = t.dataset.sc === cur;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+    });
+    if (!stepper.hidden) stepper.setAttribute('aria-labelledby', 'tab-sc' + state.sc);
+  }
+  function showScenario(k, v, i) {
+    stepper.hidden = false; $('st-extra').hidden = false;
+    state.sc = k; state.v = v || 0; state.i = i || 0; render();
+  }
+  function next() {
+    if (state.i < steps().length - 1) go(state.i + 1);
+    else if (state.sc < SCENARIOS.length - 1) showScenario(state.sc + 1);
+  }
+  function activate(t) { showScenario(parseInt(t.dataset.sc, 10)); }
+
+  $('st-prev').addEventListener('click', function () { go(state.i - 1); });
+  $('st-prev2').addEventListener('click', function () { go(state.i - 1); });
+  $('st-next').addEventListener('click', next);
+  $('st-next2').addEventListener('click', next);
+  $('st-zoom').addEventListener('click', function () {
+    var w = document.querySelector('.stage-wrap'), on = !w.classList.contains('zoom');
+    w.classList.toggle('zoom', on);
+    this.setAttribute('aria-pressed', on ? 'true' : 'false');
+    this.textContent = on ? '도면 맞춤' : '도면 확대';
+  });
+  $('st-strip').addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (b) go(parseInt(b.dataset.i, 10)); });
+  $('st-variants').addEventListener('click', function (e) { var b = e.target.closest('[data-v]'); if (b) { state.v = parseInt(b.dataset.v, 10); state.i = 0; render(); } });
+  stepper.addEventListener('keydown', function (e) {
+    if (e.target.closest('input,select,textarea')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(state.i - 1); }
+  });
+  tabs.forEach(function (t, k) {
+    t.addEventListener('click', function () { activate(t); });
+    t.addEventListener('keydown', function (e) {
+      var n = null;
+      if (e.key === 'ArrowRight') n = (k + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') n = (k - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = tabs.length - 1;
+      if (n === null) return;
+      e.preventDefault();
+      activate(tabs[n]);
+      tabs[n].focus();
+    });
+  });
+
+  var hash = (location.hash || '').slice(1);
+  var hm = /^sc([1-4])(?:-v(\d+)-s(\d+))?$/.exec(hash);
+  try {
+    var saved = JSON.parse(localStorage.getItem('cd-step4') || 'null');
+    if (valid(saved)) state = { sc: saved.sc, v: saved.v, i: saved.i };
+  } catch (e) {}
+  if (hm) {
+    var want = { sc: parseInt(hm[1], 10) - 1, v: hm[2] ? parseInt(hm[2], 10) - 1 : 0, i: hm[3] ? parseInt(hm[3], 10) - 1 : 0 };
+    state = valid(want) ? want : { sc: want.sc, v: 0, i: 0 };
+  }
+  render();
+  if (hm) $('scenarios').scrollIntoView();
+})();
+
+</script>
+
+</body></html>
