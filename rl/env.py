@@ -97,7 +97,7 @@ class CommEnv(gym.Env):
         self._r = 0.0
         self.stats["know_err"].append(abs(self.know.normal[a.ws] - self.b_normal[a.ws]))
         self._log("A", f"spot {a.ws}: {ATYPES[a.atype]} | B knows obj {self.know.obj[a.ws]:.2f} normal {self.know.normal[a.ws]:.2f} "
-                       f"current {a.hist.est_current:.2f} | send: {describe(act)}")
+                       f"current {self.know.cur[a.ws]:.2f} | send: {describe(act)}")
         if act:
             redundant = a.job is not None and not a.job["failed"]
             self.stats["redundant"] += redundant
@@ -167,6 +167,7 @@ class CommEnv(gym.Env):
             self.ws = (self.ws + 1) % self.n_ws
             if self.ws not in self.anom and r.random() < self.p_spot[self.ws]:
                 self.anom[self.ws] = Anomaly(r, self.c, self.ws, self.t)
+                self.know.on_new_anomaly(self.ws)
                 s = self.spots[self.ws]
                 self._log("!", f"spot {self.ws}: {ATYPES[self.anom[self.ws].atype]} happens "
                                f"(look-alikes {s.n_similar}{', identical' if s.identical and s.n_similar > 1 else ''})")
@@ -236,9 +237,12 @@ class CommEnv(gym.Env):
                 a.hist.on_result(reason)
                 if reason == OK:
                     self.know.on_success(a.ws)
-                seen = {k: x.hist for k, x in self.anom.items() if x.hist.t0 <= job["t_start"]}
+                seen = {k for k, x in self.anom.items() if x.hist.t0 <= job["t_start"]}
                 q = self.c["vis"]  # A's visibility table; B passes each spot twice (out and back)
-                self.know.on_route(HOME, a.ws, 1 - (1 - q) ** 2, seen)
+                passed = route_spots(HOME, a.ws)
+                self.know.on_pass({k: 1 - (1 - q) ** 2 for k in passed}, seen)
+                for k in passed:  # ponytail: event level, A is taken to have seen these spots normal since
+                    self.know.on_spot_seen(k, k not in seen)
         if self.busy is None and self.queue:
             a = self.queue.pop(0)
             a.job["t_start"] = self.t
@@ -302,9 +306,10 @@ if __name__ == "__main__":
     full_c = [run(CommEnv("clustered"), lambda o: FULL, i)[1] for i in range(50)]
     assert sum(x["requests"] for x in base) > 3 * max(sum(x["requests"] for x in full_c), 1)
     # A's estimate: a certain pass marks the in-between spot as seen, the anomaly there as known
-    k, h = K(4), H(0)
-    k.on_route(HOME, 3, 1.0, {2: h})
-    assert k.obj[0] == k.normal[1] == 1 and k.normal[2] == 0 and h.est_current == 1
+    k = K(4)
+    k.on_pass({j: 1.0 for j in route_spots(HOME, 3)}, {2})
+    k.on_spot_seen(0, True), k.on_spot_seen(1, True)
+    assert k.obj[0] == k.normal[1] == 1 and k.normal[2] == 0 and k.cur[2] == 1
     # B always ends a job back at standby
     e = CommEnv("normal"); e.reset(seed=0); done = False
     while not done:
