@@ -51,6 +51,15 @@ def load_parameters(path=PARAMETERS):
     return ParameterStore.load(path, allow_simulation=True) if path.exists() else None
 
 
+POLICY = Path(__file__).with_name("sim2d_policy_v1.json")
+
+
+def load_caps(path=POLICY):
+    """b_safe caps chosen on validation seeds (sim2d_rule_select.py), or {} (b_safe = b_cal)."""
+    path = Path(path)
+    return json.loads(path.read_text(encoding="utf-8"))["caps"] if path.exists() else {}
+
+
 def load_score_model(path=SCORE_MODEL):
     """Fixed b_cal model (sim2d_calibrate.py --scores), or None (then b_cal = b_raw, marked uncalibrated)."""
     path = Path(path)

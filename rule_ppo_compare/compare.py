@@ -17,6 +17,8 @@ p = argparse.ArgumentParser()
 p.add_argument("--episodes", type=int, default=200)
 p.add_argument("--ref", default="Rule (proposed)", help="method the paired differences are taken against")
 p.add_argument("--out", default=None, help="folder for results.csv / episodes.csv (default: this folder)")
+p.add_argument("--seed0", type=int, default=0, help="first seed (default 0 = seeds 0..episodes-1)")
+p.add_argument("--only", default=None, help="comma-separated method names to run (default: all)")
 args = p.parse_args()
 here = Path(__file__).resolve().parent
 out_dir = Path(args.out) if args.out else here
@@ -55,6 +57,8 @@ METHODS = {
     "PPO from rule":         (ppo("bcppo"), True, "core"),
 }
 METHODS = {k: v for k, v in METHODS.items() if v[0] is not None}
+if args.only:
+    METHODS = {k: METHODS[k] for k in args.only.split(",")}
 
 
 def decision_metrics(S, mode):
@@ -86,7 +90,7 @@ for cond in CONDITIONS:
     for name, (policy, belief, mode) in METHODS.items():
         env = Sim2DEnv(cond, belief=belief)
         R, S = [], []
-        for seed in range(args.episodes):  # same seeds -> same anomalies, perception and worker for every method
+        for seed in range(args.seed0, args.seed0 + args.episodes):  # same seeds -> same events for every method
             env.reset(seed=seed)
             total, done = 0.0, False
             while not done:

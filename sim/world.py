@@ -24,10 +24,12 @@ from features import (CUR, ID, IMG, ITEMS, MODES, NEED_ID, NEED_NORMAL, NORM, OK
                       History, items_of)
 # A's estimate of what B knows = knowledge_estimation (KnowledgeEstimator), parameters measured in this world
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from knowledge_estimation.integration.sim2d import CoreKnowledge, load_parameters, load_score_model  # noqa: E402
+from knowledge_estimation.integration.sim2d import (CoreKnowledge, load_caps, load_parameters,  # noqa: E402
+                                                    load_score_model)
 
 CORE_PARAMETERS = load_parameters()  # knowledge_estimation/integration/sim2d_parameters_v1.json, or None
 SCORE_MODEL = load_score_model()     # its b_cal score calibration, or None (b_cal = b_raw)
+CORE_CAPS = load_caps()              # b_safe caps chosen on validation seeds, or {} (b_safe = b_cal)
 BASELINES = ("cache", "cache_result", "optimistic")  # Notion section 10 own baselines / ablation, comparison only
 
 LAYOUT = dict(
@@ -258,7 +260,7 @@ class World:
         n = len(self.spots)
         # A's estimate of B = knowledge_estimation (fed by _knows(...) and the _core(...) hooks below). The Notion
         # section 10 baselines run alongside only so that the comparison methods can read them.
-        self.knows = {"core": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL)}
+        self.knows = {"core": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL, CORE_CAPS)}
         self.knows.update({m: BKnowledge(n, m) for m in BASELINES})
         self.know = self.knows["core"]
         self.b_obj, self.b_normal, self.b_wrong = np.zeros(n, bool), np.zeros(n, bool), np.zeros(n, bool)  # truth

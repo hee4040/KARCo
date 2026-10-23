@@ -96,14 +96,76 @@
 - seed 0–199(팀원 비교 스크립트의 seed)는 개발 중 진단에 한 번 썼으므로 최종 보고에 쓰지 않는다.
 - PPO 결과는 사용자 추정값으로 재학습한 뒤에 비교해야 한다.
 
-## 4. 재현
+## 4. 규칙 기반 연동 (팀 규칙이 b_safe를 읽음)
+
+규칙 정책은 팀원 코드(`rule_based_comm/`은 수정 없음, 연결부 `rule_ppo_compare/calibrated.py`)를 그대로 쓴다.
+노션 §10의 비교 방식은 모두 같은 사건 관리·ACK·재전송·B 규칙·요청·재검증을 쓰고, 담을 정보만 다르다.
+
+### b_safe 상한 선택 (노션 §12 정책 파라미터, 검증 seed 120000–120199 × 조건 5개)
+
+| I 상한 | 보상 | 상한 없음 대비 [95% CI] | 성공률 | KB | 오조작 |
+|---|---:|---|---:|---:|---:|
+| **없음 (선택)** | −22.70 | — | 0.820 | 13.9 | 0.070 |
+| 0.9 / 0.8 | −22.70 | +0.00 (결정이 하나도 바뀌지 않음) | 0.820 | 13.9 | 0.070 |
+| 0.6 | −23.76 | −1.06 [−1.64, −0.48] | 0.817 | 13.8 | 0.070 |
+
+규칙의 기대비용 계산이 이미 b_I의 불확실성을 비용으로 다루므로 추가 상한은 필요 없었다. 선택은 `sim2d_policy_v1.json`(`sim2d_rule_select.py`).
+
+### 최종 비교 (처음 쓰는 seed 300000–300199 × 조건 5개, 실행 전 추정기·보정표·상한·비교 코드 해시 고정, 실행 후 불변 확인)
+
+보상(팀 비용 가중치, 높을수록 좋음)
+
+| 방식 | base | occluded | limited | lookalike | lookalike_occ |
+|---|---:|---:|---:|---:|---:|
+| Event-gated Full | −36.4 | −36.9 | −48.8 | −52.6 | −54.0 |
+| Minimal Push+Pull | −16.5 | −17.4 | −27.0 | **−26.8** | **−28.1** |
+| Scene-only rule | −16.5 | −16.7 | −18.1 | −36.5 | −35.7 |
+| Rule + Confirmed Cache | −16.5 | −16.7 | −19.0 | −34.8 | −34.0 |
+| Rule + Confirmed Cache + Result | −15.7 | −15.8 | −18.4 | −31.0 | −31.7 |
+| Rule + 낙관적 추정 (ablation) | **−15.2** | **−15.1** | −20.3 | −27.5 | −28.4 |
+| **Rule + 이 추정기 (제안)** | **−15.2** | −15.2 | **−17.3** | −27.9 | −28.3 |
+
+전송량 KB/에피소드 (불필요 전송 KB)
+
+| 방식 | base | occluded | limited | lookalike | lookalike_occ |
+|---|---:|---:|---:|---:|---:|
+| Event-gated Full | 205.0 (192.1) | 206.2 (192.5) | 311.3 (215.5) | 191.6 (154.9) | 190.7 (153.5) |
+| Minimal Push+Pull | 11.3 (0.0) | 12.4 (0.0) | 10.1 (0.0) | 50.4 (0.0) | 56.8 (0.0) |
+| Rule + Confirmed Cache | 11.3 (6.4) | 11.3 (6.4) | 15.4 (6.0) | 49.5 (28.8) | 48.7 (27.7) |
+| Rule + Cache + Result | 8.6 (3.6) | 8.7 (3.4) | 12.2 (3.6) | 39.8 (19.5) | 39.8 (18.2) |
+| Rule + 낙관적 추정 | 6.3 (0.8) | 7.2 (0.9) | 7.8 (0.9) | 29.6 (4.8) | 33.7 (5.0) |
+| **Rule + 이 추정기** | **6.1 (0.3)** | **6.3 (0.2)** | **6.1 (0.3)** | **25.2 (0.2)** | **27.9 (0.2)** |
+
+같은 seed 짝 비교 (Rule + 이 추정기 기준, 정규 근사 95% CI)
+
+| 대상 | 조건 | 보상 차이 | KB 차이 |
+|---|---|---|---|
+| Confirmed Cache | 5개 모두 | 제안이 1.3–6.8 높음, 모두 p < 0.05 | 제안이 5.0–24.2 적음, 모두 p < 0.001 |
+| 낙관적 추정 | limited | 제안이 3.0 높음 [1.0, 5.0], p = 0.003 | 차이 없음 |
+| 낙관적 추정 | 나머지 4개 | 유의한 차이 없음 | lookalike 2종에서 제안이 4.4–5.8 적음, p < 0.001 |
+
+성공률은 규칙 계열이 모두 0.81–0.83으로 비슷하다(Full과 Scene-only rule은 유사품 조건에서 0.77–0.79).
+
+해석과 한계:
+
+- 노션 §10 자체 기준선(Confirmed Cache)을 모든 조건에서 유의하게 이기면서 전송량도 가장 적다. 불필요 전송은 거의 없다(0.2–0.3 KB).
+- 낙관적 추정과 비교하면 손실 링크에서만 유의하게 낫다. 낙관적 추정은 받았다고 과신해서 N을 다시 요청받는다(pull 0.57회 대 0회).
+- **유사품 조건에서 오조작이 더 많다**(0.14회/에피소드, Cache + Result 0.08회). 규칙이 사진이 필요했던 결정에서 처음에는 사진을 생략하고(생략 비율 1.00), B의 요청이나 위치 판단에 맡긴다. 추정기의 I 불확실성(B의 외형 오학습)이 규칙 비용 모델(`calibrated.py`, 팀원 코드)에서 사진 비용보다 작게 평가되는 것으로 보인다.
+- 유사품 조건에서는 Minimal Push+Pull의 보상이 약간 높다(−26.8 대 −27.9). 이 쌍은 짝 검정을 하지 않았다. Minimal은 전송량이 약 2배이고 요청이 에피소드당 약 4회다.
+- PPO는 이 추정값으로 재학습한 뒤 비교한다.
+
+## 5. 재현
 
 ```powershell
 python -m knowledge_estimation.integration.sim2d_calibrate --episodes 300                 # 파라미터
 python -m knowledge_estimation.integration.sim2d_calibrate --scores --episodes 200        # b_cal
 python -m knowledge_estimation.integration.sim2d_trace --episodes 40                      # 노션 흐름·규칙 검사
-python -m knowledge_estimation.integration.sim2d_evaluate --episodes 200 --seed0 200000   # 최종 평가
+python -m knowledge_estimation.integration.sim2d_evaluate --episodes 200 --seed0 200000   # 추정기 최종 평가
+python -m knowledge_estimation.integration.sim2d_rule_select --episodes 200               # b_safe 상한 (검증)
+cd rule_ppo_compare
+python compare.py --episodes 200 --seed0 300000 --out ../knowledge_estimation/data/rule_final_v1 --only "Event-gated Full,Minimal Push+Pull,Scene-only rule,Rule (Confirmed Cache),Rule (Cache+Result),Rule (optimistic),Rule (proposed)"
+cd ..
 python -m unittest discover -s knowledge_estimation/tests -t .
 ```
 
-팀원 파일 수정은 연결 지점만이다: `sim/world.py`(추정기 등록, `_core` 사건 전달, 출동 기록, 자체 검사의 추정기 참조), `sim/env2d.py`·`rule_ppo_compare/calibrated.py`·`imitate.py`·`rl/eval.py`(추정기 이름 기본값), `rule_ppo_compare/compare.py`("Rule (proposed)"가 이 추정기를 읽음, 결과 폴더 옵션).
+팀원 파일 수정은 연결 지점만이다: `sim/world.py`(추정기 등록, `_core` 사건 전달, 출동 기록, b_safe 상한 불러오기, 자체 검사의 추정기 참조), `sim/env2d.py`·`rule_ppo_compare/calibrated.py`·`imitate.py`·`rl/eval.py`(추정기 이름 기본값), `rule_ppo_compare/compare.py`("Rule (proposed)"가 이 추정기를 읽음, `--out`·`--seed0`·`--only` 옵션). 규칙 정책 본체 `rule_based_comm/`과 그 테스트는 수정하지 않았다.
