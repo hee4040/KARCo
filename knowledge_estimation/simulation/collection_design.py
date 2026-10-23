@@ -4,7 +4,7 @@ from copy import deepcopy
 import hashlib
 from itertools import product
 import json
-from math import ceil, log
+from math import ceil, cos, log, radians, sin
 from pathlib import Path
 import random
 
@@ -24,9 +24,32 @@ def scene_id(config):
     return digest({k: config[k] for k in keys})
 
 
-def build_plan(*, seed=20261023, epsilon=.10, alpha=.05):
+CAMERA_MOUNTS = ("free", "forward")
+
+
+def route_of(config, draw):
+    """(origin_xy, direction_rad, camera_relative_rad, length_m) of a planned pass.
+
+    free: legacy design, travel +x along y=offset, camera at heading_degrees.
+    forward: camera fixed to the travel direction; heading_degrees IS the route
+    direction, and the object lies at distance_m on the drawn side of the route.
+    """
+    length = config["route_x"][1]-config["route_x"][0]
+    if draw.get("camera_mount", "free") == "free":
+        return (config["route_x"][0], draw["offset"]), 0., radians(draw["heading_degrees"]), length
+    psi = radians(draw["heading_degrees"])
+    u, n = (cos(psi), sin(psi)), (-sin(psi), cos(psi))
+    obj, d = config["object_xy"], draw["side"]*draw["distance_m"]
+    # Closest approach at mid-route, as in the legacy design.
+    origin = (obj[0]-n[0]*d-u[0]*length/2, obj[1]-n[1]*d-u[1]*length/2)
+    return origin, psi, 0., length
+
+
+def build_plan(*, seed=20261023, epsilon=.10, alpha=.05, camera_mount="free", ood_distance_bins_m=None):
     if type(seed) is not int or not 0 < epsilon < 1 or not 0 < alpha < 1:
         raise ValueError("explicit integer seed, epsilon and alpha in (0,1) required")
+    if camera_mount not in CAMERA_MOUNTS:
+        raise ValueError(f"camera_mount must be one of {CAMERA_MOUNTS}")
     config = json.loads(Path(__file__).with_name("scenario.json").read_text(encoding="utf-8"))
     config["protocol_id"] = "d455-balanced-acquisition-v2"
     config["sweeps"] = {}  # Existing legacy grids are deliberately unused.
@@ -69,6 +92,19 @@ def build_plan(*, seed=20261023, epsilon=.10, alpha=.05):
         "numerical_audit": "Retain every draw, including boundary cases; check aligned half/quarter timestep; never relabel or filter to improve scores",
         "hardware_status": {"camera_intrinsics": "nominal, not measured", "N_I_dwell": "experimental .3/.6 seconds, not measured",
                             "identity_pose": "ideal", "execution_noise": "not modeled", "validity": "simulation only"}}
+    if camera_mount == "forward":
+        # Only added for the new design so the legacy plan_id is unchanged.
+        plan["camera_mount"] = "forward"
+        plan["config"]["protocol_id"] = plan["ood_environment_config"]["protocol_id"] = "d455-forward-mount-acquisition-v1"
+        plan["reference_distribution"] = ("Equal mass per speed x distance-bin x route-direction-bin x wall-state; camera heading = route "
+            "direction (fixed forward mount); object side left/right uniform; independent uniform distance/direction/phase inside each cell. "
+            "Experimental design, NOT measured operation frequencies.")
+        plan["truth_only"] = [*plan["truth_only"], "side"]
+        plan["route_geometry"] = ("6 m straight route, closest approach to the object at mid-route; walls are occluders only, "
+                                  "collisions with walls are not modeled")
+    if ood_distance_bins_m is not None:
+        # Only set when requested so default plans keep their plan_id.
+        plan["ood_distance_bins_m"] = ood_distance_bins_m
     plan["plan_id"] = digest(plan)
     validate_plan(plan)
     return plan
@@ -116,12 +152,16 @@ def allocations(plan):
                 opaque = digest([plan["plan_id"], split, stratum, repeat])[:24]
                 trial_id = f"{plan['plan_id'][:12]}/{split}/{opaque}"
                 distance = rng.uniform(*distances[di])
-                yield {"trial_id": trial_id, "split": split, "stratum_id": stratum,
+                row = {"trial_id": trial_id, "split": split, "stratum_id": stratum,
                     "scene_id": scene_id(config), "physical_object_id": "physical-Q",
                     "route_family_id": "table-route", "speed_mps": speed,
                     "distance_m": distance, "offset": config["object_xy"][1]-distance,
                     "heading_degrees": rng.uniform(*plan["heading_bins_degrees"][hi]),
                     "walls": walls, "frame_phase_seconds": rng.random()*config["dt_seconds"]}
+                if plan.get("camera_mount") == "forward":
+                    del row["offset"]
+                    row.update(camera_mount="forward", side=rng.choice((-1, 1)))
+                yield row
 
 
 def check_allocations(plan, rows):

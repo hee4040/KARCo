@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "notice": "Declared experimental noise levels for a synthetic 2D world, NOT measured D455/robot values. Randomness is injected only into physical quantities (B execution, per-frame detection, frame delivery); acquisition is still computed by geometry plus the storage gate. Replace with measured values when hardware logs exist.",
+  "shared": {
+    "image_width_px": 1280,
+    "image_width_source": "D455 nominal 1280-pixel stream width; focal length is derived from the scenario FOV, not from measured intrinsics",
+    "object_width_m": 0.10,
+    "object_width_source": "declared tabletop object size for the experiment"
+  },
+  "profiles": {
+    "none": {
+      "description": "Deterministic reference: must reproduce collect_designed.sample_pass exactly",
+      "execution": null,
+      "detection": null,
+      "frame_drop_probability": 0.0,
+      "track_max_miss_seconds": 0.0
+    },
+    "low": {
+      "description": "Well-tuned robot, good lighting",
+      "execution": {"lateral_sigma_m": 0.02, "lateral_tau_s": 2.0, "yaw_sigma_deg": 1.0, "yaw_tau_s": 1.0, "speed_scale_sigma": 0.01},
+      "detection": {"p_max": 0.99, "size_px50": 12.0, "size_px_scale": 2.0, "edge_margin_deg50": 1.5, "edge_margin_scale_deg": 0.75,
+                    "exposure_s": 0.006, "blur_px50": 16.0, "blur_px_scale": 3.0, "nuisance_logit_sigma": 0.3, "nuisance_tau_s": 1.0},
+      "frame_drop_probability": 0.01,
+      "track_max_miss_seconds": 0.067
+    },
+    "medium": {
+      "description": "Default study level: indoor lighting, typical path-following error",
+      "execution": {"lateral_sigma_m": 0.05, "lateral_tau_s": 2.0, "yaw_sigma_deg": 3.0, "yaw_tau_s": 1.0, "speed_scale_sigma": 0.03},
+      "detection": {"p_max": 0.97, "size_px50": 16.0, "size_px_scale": 3.0, "edge_margin_deg50": 3.0, "edge_margin_scale_deg": 1.5,
+                    "exposure_s": 0.010, "blur_px50": 12.0, "blur_px_scale": 3.0, "nuisance_logit_sigma": 0.8, "nuisance_tau_s": 1.0},
+      "frame_drop_probability": 0.03,
+      "track_max_miss_seconds": 0.1
+    },
+    "high": {
+      "description": "Stress level: poor lighting, loose path following, lossy frames",
+      "execution": {"lateral_sigma_m": 0.10, "lateral_tau_s": 2.0, "yaw_sigma_deg": 6.0, "yaw_tau_s": 1.0, "speed_scale_sigma": 0.06},
+      "detection": {"p_max": 0.93, "size_px50": 20.0, "size_px_scale": 4.0, "edge_margin_deg50": 5.0, "edge_margin_scale_deg": 2.5,
+                    "exposure_s": 0.016, "blur_px50": 10.0, "blur_px_scale": 3.0, "nuisance_logit_sigma": 1.2, "nuisance_tau_s": 1.5},
+      "frame_drop_probability": 0.08,
+      "track_max_miss_seconds": 0.1
+    }
+  }
+}
