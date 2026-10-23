@@ -1,3 +1,5 @@
+> **보관 기록:** 이 문서의 실험 코드(`knowledge_estimation/simulation/`)와 관련 테스트는 팀 2D 시뮬레이터(`sim/`)로 옮기면서 삭제했다. 코드는 커밋 `cb67c57`(브랜치 `subin/knowledge_estimation`)에 그대로 있다: `git checkout cb67c57 -- knowledge_estimation/simulation`. 현재 연동은 `sim/knowledge.py`를 본다.
+
 # 시점 기반 획득 추정기와 정보 수준별 비교
 
 > **현재 기준은 §8 카메라 진행 방향 고정 설계다.** 팀 결정에 따라 B의 D455는 진행 방향으로 고정한다.

@@ -16,8 +16,11 @@ from stable_baselines3 import PPO
 p = argparse.ArgumentParser()
 p.add_argument("--episodes", type=int, default=200)
 p.add_argument("--ref", default="Rule (proposed)", help="method the paired differences are taken against")
+p.add_argument("--out", default=None, help="folder for results.csv / episodes.csv (default: this folder)")
 args = p.parse_args()
 here = Path(__file__).resolve().parent
+out_dir = Path(args.out) if args.out else here
+out_dir.mkdir(parents=True, exist_ok=True)
 models = here.parent / "rl" / "models"
 TAU = 0.8  # 'high estimate' threshold, fixed in advance (scenario doc)
 
@@ -44,12 +47,12 @@ METHODS = {
     "Rule (Confirmed Cache)": (lambda env: rule_calibrated(env, "cache"), True, "cache"),
     "Rule (Cache+Result)":   (lambda env: rule_calibrated(env, "cache_result"), True, "cache_result"),
     "Rule (optimistic)":     (lambda env: rule_calibrated(env, "optimistic"), True, "optimistic"),
-    "Rule (proposed)":       (lambda env: rule_calibrated(env, "proposed"), True, "proposed"),
-    "Rule-default":          (lambda env: rule_default(env, "proposed"), True, "proposed"),
+    "Rule (proposed)":       (lambda env: rule_calibrated(env, "core"), True, "core"),  # knowledge_estimation
+    "Rule-default":          (lambda env: rule_default(env, "core"), True, "core"),
     "PPO (no B)":            (ppo("unc"), False, None),
-    "PPO":                   (ppo("proposed"), True, "proposed"),
-    "BC (rule copy)":        (ppo("bc"), True, "proposed"),
-    "PPO from rule":         (ppo("bcppo"), True, "proposed"),
+    "PPO":                   (ppo("proposed"), True, "core"),
+    "BC (rule copy)":        (ppo("bc"), True, "core"),
+    "PPO from rule":         (ppo("bcppo"), True, "core"),
 }
 METHODS = {k: v for k, v in METHODS.items() if v[0] is not None}
 
@@ -134,7 +137,7 @@ for cond in CONDITIONS:
                       f"{d.mean() + 1.96 * se:+.2f}]  p={pval:.3f}")
 
 for fname, data in (("results.csv", rows), ("episodes.csv", eps)):
-    with open(here / fname, "w", newline="", encoding="utf-8") as f:
+    with open(out_dir / fname, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(dict.fromkeys(k for r in data for k in r)))  # union: some rows lack Brier
         w.writeheader()
         w.writerows({k: round(v, 4) if isinstance(v, float) else v for k, v in r.items()} for r in data)

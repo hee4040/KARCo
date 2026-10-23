@@ -29,7 +29,7 @@ for ep in range(args.episodes):
     obs, _ = env.reset(seed=100_000 + ep)
     rs, done = [], False
     while not done:
-        act = rule_calibrated(env, "proposed")
+        act = rule_calibrated(env, "core")  # knowledge_estimation
         X.append(obs)
         A.append(act)
         obs, r, done, _, _ = env.step(act)

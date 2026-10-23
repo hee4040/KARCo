@@ -1,0 +1,180 @@
+{
+ "schema_version": 1,
+ "origin": "simulation",
+ "estimator_fingerprint": "14d9c20514062cd6bf2c59bb153f3b755af92be28a1284c58435c02fb95ee916",
+ "receiver_ids": [
+  "B"
+ ],
+ "maps": {
+  "N": {
+   "support": [
+    0.0,
+    1.0
+   ],
+   "blocks": [
+    {
+     "upper": 0.0,
+     "count": 2531,
+     "positive": 712,
+     "value": 0.2813117344922955
+    },
+    {
+     "upper": 0.46904375626282396,
+     "count": 114,
+     "positive": 44,
+     "value": 0.38596491228070173
+    },
+    {
+     "upper": 0.4972514039324953,
+     "count": 7,
+     "positive": 4,
+     "value": 0.5714285714285714
+    },
+    {
+     "upper": 0.5254691689008043,
+     "count": 42,
+     "positive": 28,
+     "value": 0.6666666666666666
+    },
+    {
+     "upper": 0.5753424657534246,
+     "count": 67,
+     "positive": 55,
+     "value": 0.8208955223880597
+    },
+    {
+     "upper": 0.7355371900826446,
+     "count": 285,
+     "positive": 256,
+     "value": 0.8982456140350877
+    },
+    {
+     "upper": 0.847769028871391,
+     "count": 253,
+     "positive": 230,
+     "value": 0.9090909090909091
+    },
+    {
+     "upper": 0.9921052631578947,
+     "count": 484,
+     "positive": 459,
+     "value": 0.9483471074380165
+    },
+    {
+     "upper": 1.0,
+     "count": 7377,
+     "positive": 7237,
+     "value": 0.9810220957028603
+    }
+   ]
+  },
+  "I": {
+   "support": [
+    0.0,
+    1.0
+   ],
+   "blocks": [
+    {
+     "upper": 0.0,
+     "count": 4343,
+     "positive": 1861,
+     "value": 0.4285056412618006
+    },
+    {
+     "upper": 0.35353535353535354,
+     "count": 127,
+     "positive": 55,
+     "value": 0.4330708661417323
+    },
+    {
+     "upper": 0.5093833780160858,
+     "count": 71,
+     "positive": 44,
+     "value": 0.6197183098591549
+    },
+    {
+     "upper": 0.547945205479452,
+     "count": 101,
+     "positive": 79,
+     "value": 0.7821782178217822
+    },
+    {
+     "upper": 0.9106145251396648,
+     "count": 1242,
+     "positive": 1043,
+     "value": 0.8397745571658615
+    },
+    {
+     "upper": 0.9710526315789474,
+     "count": 215,
+     "positive": 186,
+     "value": 0.8651162790697674
+    },
+    {
+     "upper": 0.9773299748110831,
+     "count": 2604,
+     "positive": 2319,
+     "value": 0.8905529953917051
+    },
+    {
+     "upper": 1.0,
+     "count": 2452,
+     "positive": 2422,
+     "value": 0.9877650897226754
+    }
+   ]
+  },
+  "C": {
+   "support": [
+    0.0,
+    0.9981929071606054
+   ],
+   "blocks": [
+    {
+     "upper": 0.0,
+     "count": 8037,
+     "positive": 3089,
+     "value": 0.38434739330595996
+    },
+    {
+     "upper": 0.46819615064951864,
+     "count": 10,
+     "positive": 9,
+     "value": 0.9
+    },
+    {
+     "upper": 0.49635282448106993,
+     "count": 13,
+     "positive": 12,
+     "value": 0.9230769230769231
+    },
+    {
+     "upper": 0.9981929071606054,
+     "count": 3102,
+     "positive": 3092,
+     "value": 0.996776273372018
+    }
+   ]
+  }
+ },
+ "fit_split": "calibration",
+ "method": "isotonic_PAV_no_prior_no_extrapolation",
+ "decisions": 11162,
+ "pairs": {
+  "N": 11160,
+  "I": 11155,
+  "C": 11162
+ },
+ "seeds": [
+  110000,
+  110199
+ ],
+ "policies": [
+  "rule",
+  "minimal",
+  "fixed_state",
+  "full"
+ ],
+ "note": "decision-time records in the team 2D world; not robot data",
+ "model_id": "f40ea5294023a55917a76ec47fcb8911998664d2f0d6ba89fe1514ba273e629b"
+}

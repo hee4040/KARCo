@@ -79,7 +79,7 @@ class SimOutcomeModel(ExpectedCostModel):
             expected_followup_bytes=need_n * ITEM_BYTES[NORM] + (unsure + wrong) * no_img * ITEM_BYTES[IMG])
 
 
-def rule_calibrated(env, mode="proposed"):
+def rule_calibrated(env, mode="core"):
     """mode: estimator of B's knowledge (features.MODES), or None = scene-only rule."""
     w = env.world
     a = w.pending[0]
@@ -105,7 +105,7 @@ def rule_calibrated(env, mode="proposed"):
 _default = RulePolicyAdapter()
 
 
-def rule_default(env, mode="proposed"):
+def rule_default(env, mode="core"):
     """The rule exactly as on heewoo/rule-based (its own sizes and probabilities)."""
     act, _ = _default.predict(env.rule_input(mode))
     return 0 if act is None else to_action(ACTIONS[act])

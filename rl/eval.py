@@ -44,7 +44,7 @@ if args.env == "sim2d":  # rule-based expected-cost policy (heewoo/rule-based br
         adapter = RulePolicyAdapter()
 
         def policy(o):  # reads the module-level `env` of the loop below (the rule needs the world, not the vector)
-            act, _ = adapter.predict(env.rule_input("proposed" if belief else None))
+            act, _ = adapter.predict(env.rule_input("core" if belief else None))
             return 0 if act is None else 1 + sum(BIT[i] for i in ACTIONS[act])  # NO_COMM / REOBSERVE -> send nothing
         return policy
 

@@ -1,3 +1,5 @@
+> **보관 기록:** 이 문서의 실험 코드(`knowledge_estimation/simulation/`)와 관련 테스트는 팀 2D 시뮬레이터(`sim/`)로 옮기면서 삭제했다. 코드는 커밋 `cb67c57`(브랜치 `subin/knowledge_estimation`)에 그대로 있다: `git checkout cb67c57 -- knowledge_estimation/simulation`. 현재 연동은 `sim/knowledge.py`를 본다.
+
 # 선택적 보정: 원인별 분석과 별도 평가
 
 ACK 직후 원래 추정값을 보존하고, 다른 조건에서도 별도 검증에서 개선이 확인될 때만 보정하도록 수정했다.

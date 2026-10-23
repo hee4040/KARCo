@@ -1,3 +1,5 @@
+> **보관 기록:** 이 문서의 실험 코드(`knowledge_estimation/simulation/`)와 관련 테스트는 팀 2D 시뮬레이터(`sim/`)로 옮기면서 삭제했다. 코드는 커밋 `cb67c57`(브랜치 `subin/knowledge_estimation`)에 그대로 있다: `git checkout cb67c57 -- knowledge_estimation/simulation`. 현재 연동은 `sim/knowledge.py`를 본다.
+
 # 사후 보정을 끈 원본 추정기 진단과 수정
 
 이번 작업에서는 사후 보정을 적용하지 않았다. 원본 `KnowledgeEstimator`를 보존하고,

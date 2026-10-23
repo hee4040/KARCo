@@ -1,3 +1,5 @@
+> **보관 기록:** 이 문서의 실험 코드(`knowledge_estimation/simulation/`)와 관련 테스트는 팀 2D 시뮬레이터(`sim/`)로 옮기면서 삭제했다. 코드는 커밋 `cb67c57`(브랜치 `subin/knowledge_estimation`)에 그대로 있다: `git checkout cb67c57 -- knowledge_estimation/simulation`. 현재 연동은 `sim/knowledge.py`를 본다.
+
 # 균형 잡힌 획득 데이터 수집 설계와 실행 결과
 
 2D 합성 데이터의 수집 설계를 수정하고 수집·품질 검사를 완료했다.

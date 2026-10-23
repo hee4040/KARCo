@@ -22,6 +22,13 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rl"))
 from features import (CUR, ID, IMG, ITEMS, MODES, NEED_ID, NEED_NORMAL, NORM, OK, BKnowledge,  # noqa: E402
                       History, items_of)
+# A's estimate of what B knows = knowledge_estimation (KnowledgeEstimator), parameters measured in this world
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from knowledge_estimation.integration.sim2d import CoreKnowledge, load_parameters, load_score_model  # noqa: E402
+
+CORE_PARAMETERS = load_parameters()  # knowledge_estimation/integration/sim2d_parameters_v1.json, or None
+SCORE_MODEL = load_score_model()     # its b_cal score calibration, or None (b_cal = b_raw)
+BASELINES = ("cache", "cache_result", "optimistic")  # Notion section 10 own baselines / ablation, comparison only
 
 LAYOUT = dict(
     size=(2.0, 1.6), car=(0.20, 0.15), tag=0.07, dt=0.2, horizon=300.0,
@@ -249,8 +256,11 @@ class World:
         self.atypes = c.get("atypes", (0, 1, 2))
         self.spots = [Spot(k, k in pairs) for k in range(len(L["spots"]))]
         n = len(self.spots)
-        self.knows = {m: BKnowledge(n, m) for m in MODES}  # A's estimate of B, one per compared estimator
-        self.know = self.knows["proposed"]
+        # A's estimate of B = knowledge_estimation (fed by _knows(...) and the _core(...) hooks below). The Notion
+        # section 10 baselines run alongside only so that the comparison methods can read them.
+        self.knows = {"core": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL)}
+        self.knows.update({m: BKnowledge(n, m) for m in BASELINES})
+        self.know = self.knows["core"]
         self.b_obj, self.b_normal, self.b_wrong = np.zeros(n, bool), np.zeros(n, bool), np.zeros(n, bool)  # truth
         self.b_epoch = self.a_epoch = 0                   # B's memory epoch / the one A last heard of (2(b))
         self.t, self.r, self.log = 0.0, 0.0, []
@@ -258,6 +268,7 @@ class World:
         self.a_phi, self.a_stop_until = 0.0, 0.0
         self.b_state, self.b_job, self.b_frames, self.b_i = "idle", None, None, 0
         self.b_pose = (np.array(L["home"]), 0.0)
+        self.b_trip = set()  # spots B recognised on the current trip (truth)
         # events get their own stream, and each anomaly its own generator: the same seed gives the same anomalies,
         # perception and worker behaviour whatever the policy sends (fair method comparison)
         self.ev = np.random.default_rng(int(rng.integers(2 ** 63)))
@@ -267,7 +278,7 @@ class World:
         self.stats = dict(condition=condition, anomalies=0, fixed=0, times=[], bytes=0, msgs=0, images=0,
                           redundant=0, requests=0, pulls=0, reminders=0, wrong_ops=0, retx=0, resets=0,
                           not_found=0, pose_updates=0, unconfirmed=0, v2=0, deadline_miss=0, verify_delay=[],
-                          kappa=[], know_err=[], dec=[],
+                          kappa=[], know_err=[], dec=[], trips=[], trip_open=[],
                           bytes_by=dict(task=0, retx=0, info=0, pose=0, v2=0, ack=0, result=0, status=0))
 
     # ----- bookkeeping -----
@@ -301,6 +312,12 @@ class World:
         for kn in self.knows.values():
             getattr(kn, method)(*args)
 
+    def _core(self, method, *args):
+        """Events with message identity / time for the knowledge_estimation core (A-side information only)."""
+        kn = self.knows.get("core")
+        if kn is not None:
+            getattr(kn, method)(*args)
+
     def take_reward(self):
         r, self.r = self.r, 0.0
         return r
@@ -313,6 +330,7 @@ class World:
     def decide(self, act):
         a = self.pending.pop(0)
         k = a.spot
+        self._core("decision", k)  # decision-time record of b_raw / b_cal / b_safe, before anything is sent
         self._record(a, act)
         self.stats["know_err"].append(abs(self.know.normal[k] - self.b_normal[k]))
         self._log("A", f"spot {k}: {ATYPES[a.atype]} | B knows obj {self.know.obj[k]:.2f} "
@@ -336,6 +354,7 @@ class World:
         a.hist.on_send(items)
         payload = dict(items=set(items), cur_rep=a.cur_rep.copy(), cur_ver=a.cur_ver)
         a.sent = dict(payload=payload, n=n, tries=0, deadline=self.t + LAYOUT["ack_timeout"] + self._delay(n))
+        self._core("send", k, payload, items, 1)
         self._post(a, "cmd", payload, n)
 
     def _post(self, a, kind, payload, n):
@@ -440,6 +459,7 @@ class World:
                 continue
             s["tries"] += 1
             s["deadline"] = self.t + LAYOUT["ack_timeout"] + self._delay(s["n"])
+            self._core("send", a.spot, s["payload"], s["payload"]["items"], s["tries"] + 1)
             self.stats["retx"] += 1
             self._send(s["n"], IMG in s["payload"]["items"], "retx")
             self._log("A", f"spot {a.spot}: no ACK -> resend same message ({s['n']} B)")
@@ -479,6 +499,7 @@ class World:
         # sigma = RMS distance error (cm), so each axis gets sigma / sqrt(2); B searches within 2 sigma
         a.cur_rep = a.obj.pos + a.rng.normal(0, a.true_err / 100 / math.sqrt(2), 2)  # the "cur" A would send
         a.cur_ver = a.moved
+        self._core("pose_measured", a.spot, a.cur_ver, self.t)
 
     def _observe(self, k, view):
         a = self.anom.get(k)
@@ -526,7 +547,9 @@ class World:
                 self._send(n, False, "pose")
                 self.stats["pose_updates"] += 1
                 self._log("A", f"spot {k}: moved again -> POSE_UPDATE v{a.cur_ver}")
-                self._post(a, "pose", dict(cur_rep=a.cur_rep.copy(), cur_ver=a.cur_ver), n)
+                pose = dict(cur_rep=a.cur_rep.copy(), cur_ver=a.cur_ver)
+                self._core("send", k, pose, {CUR}, 1)
+                self._post(a, "pose", pose, n)
             a.need_pose = False
         self.pending.append(a)
 
@@ -566,6 +589,7 @@ class World:
         a.sent = dict(payload=payload, n=n, tries=0, deadline=self.t + LAYOUT["ack_timeout"] + self._delay(n))
         a.hist.on_send(items)
         a.wrong = False
+        self._core("send", k, payload, items, 1)
         self._post(a, "cmd", payload, n)
 
     # ----- channel -----
@@ -591,6 +615,7 @@ class World:
                     a.job["items"] |= p["items"]
                 if self._reply():
                     self._knows("on_ack", k, p["items"])
+                    self._core("ack", p, self.a_epoch)
                 continue
             # kind == "cmd" (task, retransmit or TASK v2)
             job = a.job
@@ -609,6 +634,7 @@ class World:
                 self._epoch_seen()
                 a.hist.on_ack()
                 self._knows("on_ack", k, p["items"])
+                self._core("ack", p, self.a_epoch)
                 if need_n and not job.get("pulled"):
                     job["pulled"] = True
                     self.stats["requests"] += 1
@@ -618,7 +644,9 @@ class World:
                     n = BASE_BYTES + ITEM_BYTES[NORM]
                     self._send(n, False, "info")
                     self._log("B", f"spot {k}: ACK + needs_info(N) -> A sends N before B leaves")
-                    self._post(a, "resp", dict(items={NORM}), n)
+                    resp = dict(items={NORM})
+                    self._core("send", k, resp, {NORM}, 1)
+                    self._post(a, "resp", resp, n)
 
     def _learn(self, a, items):
         if NORM in items:
@@ -649,6 +677,7 @@ class World:
                 else:
                     self.b_normal[j] = True
                 self.b_seen.add(j)
+                self.b_trip.add(j)  # truth per trip, for measuring p_acq (knowledge_estimation calibration)
         self.b_i += 1
         return self.b_i >= len(self.b_frames)
 
@@ -719,7 +748,7 @@ class World:
             a = self.queue.pop(0)
             job = a.job
             job.update(started=True, t_start=self.t)
-            self.b_job, self.b_seen = (a, job), set()
+            self.b_job, self.b_seen, self.b_trip = (a, job), set(), set()
             self.b_frames, self.b_i, self.b_state = routes(self.occluder)[a.spot][0], 0, "out"
             if a.atype == MISPLACED and not job["v2"] and a.rng.random() < L["p_move_again"]:
                 a.move_at = self.t + a.rng.uniform(1.0, 5.0)  # 4(d)
@@ -750,11 +779,15 @@ class World:
             if self._drive():
                 self.b_state, self.b_job = "idle", None
                 self._log("B", f"back at standby, saw spots {sorted(self.b_seen)} on the trip (hidden from A)")
+                open_ = {j for j, x in self.anom.items() if x.detected and x.hist.t0 <= job["t_start"]}
+                self.stats["trips"].append((a.spot, {j: (j in self.b_trip, j in self.b_trip and not self.b_wrong[j])
+                                                     for j in range(len(self.spots)) if j != a.spot}))
+                self.stats["trip_open"].append(sorted(open_))  # spots A knew were abnormal (not a normal pass)
                 if self._reply("result"):  # trip report: A knows the route from its own command
                     if job["failed"]:
                         a.hist.on_result(job["reason"])
-                    open_ = {j for j, x in self.anom.items() if x.detected and x.hist.t0 <= job["t_start"]}
                     self._knows("on_pass", visibility_table()[a.spot], open_)
+                    self._core("trip", a.spot, open_, sorted(visibility_table()[a.spot]))  # A's route map
 
     def _missing(self, a, job):
         pick = self._pick(a, job["items"], job["cur_rep"])
@@ -789,7 +822,9 @@ class World:
                 n = BASE_BYTES + sum(ITEM_BYTES[i] for i in miss)
                 self._send(n, IMG in miss, "info")
                 a.hist.items |= miss
-                self._post(a, "resp", dict(items=miss), n)
+                resp = dict(items=miss)
+                self._core("send", k, resp, miss, 1)
+                self._post(a, "resp", resp, n)
             return
         if miss or pick == NOT_FOUND:
             self._give_up(a, job, NEED_ID if IMG in miss or pick == NOT_FOUND else NEED_NORMAL, "cannot instruct")
@@ -870,7 +905,7 @@ if __name__ == "__main__":
     w, a = scenario_world(1, [0.06, 0.0])
     run_scenario(w, a, E)
     assert w.stats["pulls"] == 1 and w.stats["fixed"] == 1 and w.stats["verify_delay"], w.stats
-    assert w.know.normal[1] == 1 and w.know.obj[1] == 0.9 and w.b_state == "idle", w.log
+    assert w.knows["cache_result"].normal[1] == 1 and w.knows["cache_result"].obj[1] == 0.9 and w.b_state == "idle", w.log
 
     # worker gets it wrong once: B keeps watching and reminds after 10 s
     L["p_wrong"] = 1.0
@@ -902,11 +937,11 @@ if __name__ == "__main__":
 
     # 2(b): memory reset with STATUS lost -> A finds out from the next ACK's epoch and voids its estimates
     w, a = scenario_world(1, [0.06, 0.0])
-    w.know.normal[:] = 1.0
+    w.knows["cache_result"].normal[:] = 1.0  # team BKnowledge rules (A uses knowledge_estimation)
     w.b_normal[:] = True
     w.next_reset, L["status_loss"] = 0.0, 1.0
     w.tick()
-    assert w.a_epoch == 0 and w.b_epoch == 1 and w.know.normal[1] == 1.0  # A still believes
+    assert w.a_epoch == 0 and w.b_epoch == 1 and w.knows["cache_result"].normal[1] == 1.0  # A still believes
     run_scenario(w, a, E)
     assert w.a_epoch == 1 and w.stats["pulls"] == 1 and w.stats["fixed"] == 1, (w.stats, w.log)
     L["status_loss"] = 0.5

@@ -34,7 +34,7 @@ class Sim2DEnv(gym.Env):
     def log(self):
         return self.world.log
 
-    def rule_input(self, mode="proposed"):
+    def rule_input(self, mode="core"):
         """The pending decision in the rule-based policy's input format (rule_based_comm.schemas.Event + BeliefState).
         mode = which estimator of B's knowledge (features.MODES), or None for a scene-only rule (no estimate).
         The 'same event is being processed' gate is common to every method (scenario doc 1)."""
