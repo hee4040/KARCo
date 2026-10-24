@@ -4,20 +4,25 @@ python -m knowledge_estimation.integration.sim2d_calibrate --episodes 300       
 python -m knowledge_estimation.integration.sim2d_calibrate --scores --episodes 200   # 2. b_cal (seeds 110000+)
 
 Step 2 freezes the step 1 parameters, replays decisions with them, and fits one PAV map per item on the
-decision-time b_raw against B's truth at that moment (Notion sections 5, 11, 12), the same model format and
-validation as knowledge_estimation.calibrate.fit_scores. Data split: sources 100000+, scores 110000+,
-final evaluation rule_ppo_compare/compare.py seeds 0..199.
+decision-time b_raw against B's truth at that moment (Notion sections 5, 11, 12). It fits the perspective
+estimator ("core") and the p_acq-table variant ("core_table") on the same decisions. Seed split: sources
+100000+, scores 110000+, validation 120000+, final evaluations on fresh seeds (see SIM2D_RESULTS.md).
 
 Every probability is successes / trials from the world's own log, never a chosen value, as ParameterStore
-requires. Seeds 100000+ never overlap rule_ppo_compare/compare.py (0..199). Conditions are drawn per episode
-as in PPO training. The log is written to knowledge_estimation/data/ (git-ignored); the artifact keeps its sha256.
+requires. Conditions are drawn per episode as in PPO training. The log is written to knowledge_estimation/data/
+(git-ignored); the artifact keeps its sha256.
 
   p_recv   (channel)              A -> B message delivered                           per send attempt
   p_ack    (channel)              B -> A reply delivered (ACK, request)              per reply
   F_recv   (channel)              delivery delay of delivered messages
+  p_frame  (in_view)              B recognises a spot in one camera frame while the  per frame in view
+                                  spot is in its view (sensor rate; the perspective model's only pass input)
   p_acq    (kind, spot, route)    B stored N / the right look I of a spot it passed  per trip and spot on A's route
-                                  map, only spots A did not know to be abnormal (the core's normal-interval gate)
+                                  map, only spots A did not know to be abnormal (table variant, comparison only)
   q_learn  (I, verified)          B holds the right look after A verified a repair   per verified repair
+  q_learn  (I, pass)              B holds the right look of a spot it recognised     per trip and spot recognised
+                                  while passing (verified repairs over-represent right looks: a wrong look
+                                  leads to the wrong object, which A does not verify)
   r_crop   (I, content)           a received crop leaves B with the right look        per received crop
   r_current(C, content)           a received C still matches the object's position   per received C
 """
@@ -34,10 +39,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / "sim"), str(ROOT / "rl"), str(ROOT)]
 
 from knowledge_estimation.integration.sim2d import (  # noqa: E402
-    CONTENT_CONDITION, CUR, IMG, LEARNING_CONDITION, PARAMETERS, PASS_CONDITION, channel_condition)
+    CONTENT_CONDITION, CUR, IMG, LEARNING_CONDITION, PARAMETERS, PASS_CONDITION, SCORE_MODEL, SCORE_MODEL_TABLE,
+    channel_condition)
 
-LOG = ROOT / "knowledge_estimation" / "data" / "sim2d_calibration_v1" / "log.csv"
-CANDIDATES = ROOT / "knowledge_estimation" / "data" / "sim2d_score_candidates"
+LOG = ROOT / "knowledge_estimation" / "data" / "sim2d_calibration_v2" / "log.csv"
+FRAME_CONDITION = "in_view"  # perspective.PerspectiveAcquisition reads p_frame under this condition
+SCORE_OUTPUTS = {"core": SCORE_MODEL, "core_table": SCORE_MODEL_TABLE}
 
 
 def collect(episodes, seed0):
@@ -83,6 +90,9 @@ def collect(episodes, seed0):
             while not done:
                 _, _, done, _, info = env.step(FULL)
             s = info["stats"]
+            trials, hits = s["frames"]
+            rows += [dict(source="p_frame", context=FRAME_CONDITION, success=int(i < hits), duration="")
+                     for i in range(trials)]
             for (k, truth), open_ in zip(s["trips"], s["trip_open"]):
                 for j in W.visibility_table()[k]:  # A's route map (no occluder)
                     if j in open_:
@@ -90,6 +100,8 @@ def collect(episodes, seed0):
                     seen, right = truth[j]
                     rows.append(dict(source="p_acq", context=f"N|S{j}|to{k}", success=int(seen), duration=""))
                     rows.append(dict(source="p_acq", context=f"I|S{j}|to{k}", success=int(right), duration=""))
+                    if seen:  # B's look of a spot it recognised while passing, whatever the route
+                        rows.append(dict(source="q_learn", context=PASS_CONDITION, success=int(right), duration=""))
     finally:
         W.World._post, W.World._reply, W.World._verified, W.World._learn = orig_post, orig_reply, orig_verified, orig_learn
     return rows
@@ -120,6 +132,8 @@ def build_artifact(rows, digest, ack_timeout):
                                 samples_seconds=delays, observation_horizon_seconds=deadline))
         elif source == "p_ack":
             rate("p_ack", ctx(condition=context), rs)
+        elif source == "p_frame":
+            rate("p_frame", ctx(condition=context), rs)
         elif source == "p_acq":
             kind, site, route = context.split("|")
             rate("p_acq", ctx(kind, site, route, PASS_CONDITION), rs)
@@ -134,20 +148,21 @@ def build_artifact(rows, digest, ack_timeout):
 
 
 SCORE_POLICIES = ("rule", "minimal", "fixed_state", "full")
-VARIANTS = (None, "sources", "sources_age")  # pooled / per evidence sources / per sources + age bin
 
 
 def collect_decisions(episodes, seed0):
-    """Decision-time records under the frozen parameters: (kind, b_raw, K, A's evidence sources, evidence age)."""
+    """Decision-time records under the frozen parameters, per estimator variant: [(kind, b_raw, K)]."""
     import world as W
-    W.SCORE_MODEL = None  # collect raw scores; any earlier map is not used while collecting
+    W.SCORE_MODEL = W.SCORE_MODEL_TABLE = None  # collect raw scores; no earlier map is used while collecting
     from env2d import Sim2DEnv
     sys.path.insert(0, str(ROOT / "rule_ppo_compare"))
     from calibrated import rule_calibrated
     # decisions come from the team's policies, so the fit sees the states those policies create
     policies = {"rule": lambda env: rule_calibrated(env, "core"), "minimal": lambda env: 1,
                 "fixed_state": lambda env: 1 + 1 + 2 + 4, "full": lambda env: 16}
-    rows, fingerprints, decisions = [], set(), 0
+    rows = {mode: [] for mode in SCORE_OUTPUTS}
+    fingerprints = {mode: set() for mode in SCORE_OUTPUTS}
+    decisions = 0
     for seed in range(seed0, seed0 + episodes):
         for name in SCORE_POLICIES:
             env = Sim2DEnv()  # condition drawn per episode, as in training
@@ -155,48 +170,35 @@ def collect_decisions(episodes, seed0):
             done = False
             while not done:
                 _, _, done, _, info = env.step(policies[name](env))
-            kn = env.world.knows["core"]
-            fingerprints.add(kn.core.fingerprint)
             dec = info["stats"]["dec"]
-            assert len(dec) == len(kn.decisions), "decision records out of step"
-            for rec, d in zip(kn.decisions, dec):  # both written once per World.decide, before sending
-                decisions += 1
-                for kind, truth in zip("NIC", d["K"]):
-                    r = rec[kind]
-                    if r["raw"] is not None and r["reason"] not in ("hard_invalid_zero", "no_item"):
-                        rows.append((kind, r["raw"], int(truth), r["sources"], r["age"]))
-    if len(fingerprints) != 1:
-        raise ValueError("score calibration needs one frozen raw estimator/parameter set")
-    return rows, fingerprints.pop(), decisions
+            decisions += len(dec)
+            for mode in SCORE_OUTPUTS:
+                kn = env.world.knows[mode]
+                fingerprints[mode].add(kn.core.fingerprint)
+                assert len(dec) == len(kn.decisions), "decision records out of step"
+                for rec, d in zip(kn.decisions, dec):  # both written once per World.decide, before sending
+                    for kind, truth in zip("NIC", d["K"]):
+                        r = rec[kind]
+                        if r["raw"] is not None and r["reason"] not in ("hard_invalid_zero", "no_item"):
+                            rows[mode].append((kind, r["raw"], int(truth)))
+    for mode, prints in fingerprints.items():
+        if len(prints) != 1:
+            raise ValueError(f"score calibration of {mode} needs one frozen raw estimator/parameter set")
+    return {mode: (rows[mode], fingerprints[mode].pop()) for mode in SCORE_OUTPUTS}, decisions
 
 
-def build_score_model(rows, fingerprint, decisions, seed0, episodes, features=None):
-    """PAV maps in the projection.validate_model format; features conditions them on A-side context."""
-    from knowledge_estimation.calibrate import _id, monotone_map
-    from knowledge_estimation.integration.sim2d import calibration_context_key
-    from knowledge_estimation.probabilistic.projection import source_key, validate_model
-    pairs = {k: [(raw, y) for kind, raw, y, _, _ in rows if kind == k] for k in "NIC"}
+def build_score_model(rows, fingerprint, decisions, seed0, episodes):
+    """One pooled PAV map per item in the projection.validate_model format."""
+    from knowledge_estimation.probabilistic.projection import model_id, monotone_map, validate_model
+    pairs = {k: [(raw, y) for kind, raw, y in rows if kind == k] for k in "NIC"}
     model = dict(schema_version=1, origin="simulation", estimator_fingerprint=fingerprint, receiver_ids=["B"],
                  maps={k: monotone_map(v) for k, v in pairs.items()}, fit_split="calibration",
                  method="isotonic_PAV_no_prior_no_extrapolation", decisions=decisions,
                  pairs={k: len(v) for k, v in pairs.items()}, seeds=[seed0, seed0 + episodes - 1],
                  policies=list(SCORE_POLICIES), note="decision-time records in the team 2D world; not robot data")
-    if features:
-        groups = {k: {} for k in "NIC"}
-        for kind, raw, y, sources, age in rows:
-            key = source_key(calibration_context_key(sources, age, features))
-            groups[kind].setdefault(key, []).append((raw, y))
-        model.update(conditioning="evidence_sources_v1", context_features=features,
-                     context_maps={k: {key: monotone_map(v) for key, v in g.items()} for k, g in groups.items()},
-                     method="A_context_conditioned_isotonic_PAV_pooled_fallback")
-    model["model_id"] = _id(model)
+    model["model_id"] = model_id(model)
     validate_model(model)
     return model
-
-
-def fit_scores(episodes, seed0, features=None):
-    rows, fingerprint, decisions = collect_decisions(episodes, seed0)
-    return build_score_model(rows, fingerprint, decisions, seed0, episodes, features)
 
 
 def main():
@@ -204,23 +206,15 @@ def main():
     p.add_argument("--episodes", type=int, default=300)
     p.add_argument("--seed0", type=int, default=None, help="default 100000 (sources) / 110000 (--scores)")
     p.add_argument("--scores", action="store_true", help="fit b_cal on decision-time records instead of sources")
-    p.add_argument("--candidates", action="store_true",
-                   help="with --scores: fit pooled / sources / sources_age on the same records into data/ for validation")
-    p.add_argument("--features", choices=["pooled", "sources", "sources_age"], default="pooled")
-    p.add_argument("--output", type=Path, default=None)
+    p.add_argument("--output", type=Path, default=None, help="sources only (default: sim2d_parameters_v2.json)")
     args = p.parse_args()
     if args.scores:
-        from knowledge_estimation.integration.sim2d import SCORE_MODEL
         seed0 = 110_000 if args.seed0 is None else args.seed0
-        rows, fingerprint, decisions = collect_decisions(args.episodes, seed0)
-        variants = VARIANTS if args.candidates else ({"pooled": None}.get(args.features, args.features),)
-        for features in variants:
-            model = build_score_model(rows, fingerprint, decisions, seed0, args.episodes, features)
-            out = (CANDIDATES / f"score_{features or 'pooled'}.json") if args.candidates else (args.output or SCORE_MODEL)
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(json.dumps(model, indent=1), encoding="utf-8")
-            contexts = {k: len(v) for k, v in model.get("context_maps", {}).items()}
-            print(f"{features or 'pooled':<12} {decisions} decisions, pairs {model['pairs']}, contexts {contexts} -> {out}")
+        fitted, decisions = collect_decisions(args.episodes, seed0)
+        for mode, (rows, fingerprint) in fitted.items():
+            model = build_score_model(rows, fingerprint, decisions, seed0, args.episodes)
+            SCORE_OUTPUTS[mode].write_text(json.dumps(model, indent=1), encoding="utf-8")
+            print(f"{mode:<11} {decisions} decisions, pairs {model['pairs']} -> {SCORE_OUTPUTS[mode].name}")
         return
     args.seed0 = 100_000 if args.seed0 is None else args.seed0
     args.output = args.output or PARAMETERS

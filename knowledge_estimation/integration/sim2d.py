@@ -12,6 +12,8 @@ KnowledgeEstimator.estimate() fed with A-side events only:
   not_found                                     observe_missing(reason="not_found")   (diagnostic only)
   B's trip report (A knows the route)           record_pass_by(normal_before=spot had no open event)
   A sees the spot normal / abnormal again       confirm_pass_by(normal_after=...)     (Notion section 8)
+                                                P(pass stored) = perspective model: A re-draws B's planned route
+                                                with its own map and D455 model (probabilistic/perspective.py)
   A's re-check verifies the repair              record_result + verify_task (measured q_learn)
   A finds B handled the wrong object            observe_missing(I) + revoke that task's evidence
   A learns a new memory epoch                   observe_status(epoch)
@@ -28,6 +30,8 @@ Every decision leaves a decision-time record (section 11) in `decisions`: all th
 calibration was or was not applied, the evidence sources, the estimator fingerprint and the calibration id.
 Differences from features.BKnowledge("proposed") are deliberate core semantics: C is never inferred from
 passing (it needs a versioned report), and not_found does not clear C because its cause is unknown.
+Built without plans, the same estimator reads the older per-(item, site, route) p_acq frequency table instead;
+the world keeps that variant as "core_table", for comparison only.
 """
 from __future__ import annotations
 
@@ -38,11 +42,13 @@ import numpy as np
 
 from ..parameters import MissingMeasurement, ParameterStore
 from ..probabilistic import KnowledgeEstimator
+from ..probabilistic.perspective import PerspectiveAcquisition
 from ..probabilistic.projection import calibration_result, validate_model
 from ..types import Information, KnowledgeItem, KnowledgeKey
 
-PARAMETERS = Path(__file__).with_name("sim2d_parameters_v1.json")
-SCORE_MODEL = Path(__file__).with_name("sim2d_score_calibration_v1.json")
+PARAMETERS = Path(__file__).with_name("sim2d_parameters_v2.json")
+SCORE_MODEL = Path(__file__).with_name("sim2d_score_calibration_v2.json")              # perspective (default)
+SCORE_MODEL_TABLE = Path(__file__).with_name("sim2d_score_calibration_table_v2.json")  # p_acq table (comparison)
 
 
 def load_parameters(path=PARAMETERS):
@@ -51,7 +57,7 @@ def load_parameters(path=PARAMETERS):
     return ParameterStore.load(path, allow_simulation=True) if path.exists() else None
 
 
-POLICY = Path(__file__).with_name("sim2d_policy_v1.json")
+POLICY = Path(__file__).with_name("sim2d_policy_v2.json")
 
 
 def load_caps(path=POLICY):
@@ -69,23 +75,6 @@ def load_score_model(path=SCORE_MODEL):
 CUR, NORM, IMG = 1, 2, 3
 C_TTL_SECONDS = 600.0  # declared task protocol TTL for a current pose (the world has no time-based expiry)
 PASS_CONDITION, CONTENT_CONDITION, LEARNING_CONDITION = "pass", "content", "verified"
-
-
-AGE_BINS = (30.0, 120.0)  # seconds; fixed before any validation run (fresh / recent / old evidence)
-
-
-def age_bin(age):
-    if age is None:
-        return "age:none"
-    return "age:<30s" if age < AGE_BINS[0] else "age:30-120s" if age < AGE_BINS[1] else "age:>120s"
-
-
-def calibration_context_key(sources, age, features):
-    """The A-side context a calibration map is conditioned on (fed to projection.source_key)."""
-    context = list(sources) or ["none"]
-    if features == "sources_age":
-        context.append(age_bin(age))
-    return context
 
 
 def channel_condition(loss):
@@ -113,14 +102,17 @@ class CoreKnowledge:
     mode = "core"
 
     def __init__(self, world, parameters: ParameterStore | None, spots_xy, score_model=None, caps=None,
-                 level="safe"):
+                 level="safe", plans=None, camera=None):
         """parameters=None: nothing measured yet, so every b_raw is None. score_model must belong to exactly
-        this estimator and parameter set (fingerprint), as projection.project requires."""
+        this estimator and parameter set (fingerprint), as projection.project requires.
+        plans (route_id -> B's planned poses) + camera: the perspective pass-by model; plans=None: p_acq table."""
         if level not in ("raw", "cal", "safe"):
             raise ValueError("level must be raw, cal or safe")
         self.world, self.n = world, len(spots_xy)
         parameters = parameters or ParameterStore()
-        self.core = KnowledgeEstimator("B", parameters=parameters)
+        acquisition = None if plans is None else PerspectiveAcquisition(
+            plans, {f"S{k}": xy for k, xy in enumerate(spots_xy)}, camera, parameters)  # A's map: no occluder
+        self.core = KnowledgeEstimator("B", parameters=parameters, acquisition=acquisition)
         self.score_model, self.caps, self.level = score_model, dict(caps or {}), level
         if score_model is not None:
             validate_model(score_model)
@@ -139,7 +131,7 @@ class CoreKnowledge:
             self.core.register(self.normal_item[k], now=0.0)
             self.core.register(self.look_item[k], now=0.0)
         self.c_version = {k: 0 for k in range(self.n)}
-        self.messages = {}      # id(payload) -> (msg_id, items)
+        self.messages = {}      # id(payload) -> (msg_id, items, payload); holding the payload keeps its id unique
         self.waiting = {}       # (msg_id, attempt) -> deadline time
         self.passes = {}        # spot -> [pass_id awaiting confirmation]
         self.tasks = {}         # spot -> task_id of the last verified repair
@@ -188,27 +180,12 @@ class CoreKnowledge:
         if self.score_model is None:
             cal, reason = (0.0, "hard_invalid_zero") if belief.hard_invalid else (raw, "uncalibrated_identity")
         else:
-            cal, reason = self._calibrate(kind, raw, belief.hard_invalid, sources, age)
+            try:
+                cal, reason = calibration_result(self.score_model, kind, raw, hard_invalid=belief.hard_invalid)
+            except MissingMeasurement:  # no extrapolation outside the scores the map was fitted on
+                cal, reason = None, "outside_calibration_support"
         safe = None if cal is None else min(cal, self.caps.get(f"b_{kind}", 1.0))
         return dict(raw=raw, cal=cal, safe=safe, reason=reason, sources=sources, age=age)
-
-    def _calibrate(self, kind, raw, hard_invalid, sources, age):
-        """Pooled PAV map, or one map per A-side context (evidence sources [+ age bin]) with the pooled map as
-        the declared fallback for a context the calibration split never showed."""
-        model = self.score_model
-        context = calibration_context_key(sources, age, model.get("context_features"))
-        try:
-            return calibration_result(model, kind, raw, hard_invalid=hard_invalid, sources=context)
-        except MissingMeasurement as error:
-            if model.get("conditioning") != "evidence_sources_v1":
-                return None, "outside_calibration_support"
-            why = "unseen_context" if "unseen" in str(error) else "outside_context_support"
-        pooled = {key: value for key, value in model.items() if key not in ("conditioning", "context_maps")}
-        try:
-            cal, _ = calibration_result(pooled, kind, raw, hard_invalid=hard_invalid, sources=context)
-            return cal, "pooled_fallback_" + why
-        except MissingMeasurement:
-            return None, "outside_calibration_support"
 
     def value(self, kind, k):
         """What the policy reads: the configured level; None -> 0.0 by the declared conservative rule."""
@@ -251,8 +228,8 @@ class CoreKnowledge:
         key = id(payload)
         if key not in self.messages:
             self.count += 1
-            self.messages[key] = (f"m{self.count}", self._items(k, items))
-        msg_id, payload_items = self.messages[key]
+            self.messages[key] = (f"m{self.count}", self._items(k, items), payload)
+        msg_id, payload_items, _ = self.messages[key]
         self.core.record_send(msg_id, payload_items, attempt_id=attempt, channel_condition=self.channel,
                               content_condition=CONTENT_CONDITION, now=now)
         if self.deadline is not None:
@@ -262,7 +239,7 @@ class CoreKnowledge:
         now = self._now()
         if id(payload) not in self.messages:
             return
-        msg_id, payload_items = self.messages[id(payload)]
+        msg_id, payload_items, _ = self.messages[id(payload)]
         for key in [w for w in self.waiting if w[0] == msg_id]:
             del self.waiting[key]
         self.core.observe_ack(msg_id, payload_items, memory_epoch=int(epoch), now=now)

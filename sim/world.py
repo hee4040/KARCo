@@ -24,13 +24,16 @@ from features import (CUR, ID, IMG, ITEMS, MODES, NEED_ID, NEED_NORMAL, NORM, OK
                       History, items_of)
 # A's estimate of what B knows = knowledge_estimation (KnowledgeEstimator), parameters measured in this world
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from knowledge_estimation.integration.sim2d import (CoreKnowledge, load_caps, load_parameters,  # noqa: E402
-                                                    load_score_model)
+from knowledge_estimation.integration.sim2d import (SCORE_MODEL_TABLE, CoreKnowledge, load_caps,  # noqa: E402
+                                                    load_parameters, load_score_model)
+from knowledge_estimation.probabilistic.perspective import Camera  # noqa: E402
 
-CORE_PARAMETERS = load_parameters()  # knowledge_estimation/integration/sim2d_parameters_v1.json, or None
+CORE_PARAMETERS = load_parameters()  # knowledge_estimation/integration/sim2d_parameters_v2.json, or None
 SCORE_MODEL = load_score_model()     # its b_cal score calibration, or None (b_cal = b_raw)
+SCORE_MODEL_TABLE = load_score_model(SCORE_MODEL_TABLE)  # b_cal of the p_acq-table variant (comparison only)
 CORE_CAPS = load_caps()              # b_safe caps chosen on validation seeds, or {} (b_safe = b_cal)
 BASELINES = ("cache", "cache_result", "optimistic")  # Notion section 10 own baselines / ablation, comparison only
+CORE_MODES = ("core", "core_table")  # knowledge_estimation: perspective pass-by model / p_acq table (comparison)
 
 LAYOUT = dict(
     size=(2.0, 1.6), car=(0.20, 0.15), tag=0.07, dt=0.2, horizon=300.0,
@@ -183,6 +186,13 @@ def visibility_table():
     return tuple(table)
 
 
+def a_plans():
+    """What A knows of each trip it commands: B's planned pose per frame (route_id -> [(x, y, heading)]).
+    Poses only; which spots B actually sees is not part of the plan."""
+    return {f"to{k}": [(float(p[0]), float(p[1]), h) for p, h, _ in out + back]
+            for k, (out, back) in enumerate(routes(False))}
+
+
 @lru_cache(None)
 def obs_points2():
     """A second stop per spot (4(c): re-observe from another view): the best point at least obs_gap rad away from
@@ -260,7 +270,9 @@ class World:
         n = len(self.spots)
         # A's estimate of B = knowledge_estimation (fed by _knows(...) and the _core(...) hooks below). The Notion
         # section 10 baselines run alongside only so that the comparison methods can read them.
-        self.knows = {"core": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL, CORE_CAPS)}
+        self.knows = {"core": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL, CORE_CAPS,
+                                            plans=a_plans(), camera=Camera(L["fov"], *L["depth"])),
+                      "core_table": CoreKnowledge(self, CORE_PARAMETERS, L["spots"], SCORE_MODEL_TABLE, CORE_CAPS)}
         self.knows.update({m: BKnowledge(n, m) for m in BASELINES})
         self.know = self.knows["core"]
         self.b_obj, self.b_normal, self.b_wrong = np.zeros(n, bool), np.zeros(n, bool), np.zeros(n, bool)  # truth
@@ -280,7 +292,7 @@ class World:
         self.stats = dict(condition=condition, anomalies=0, fixed=0, times=[], bytes=0, msgs=0, images=0,
                           redundant=0, requests=0, pulls=0, reminders=0, wrong_ops=0, retx=0, resets=0,
                           not_found=0, pose_updates=0, unconfirmed=0, v2=0, deadline_miss=0, verify_delay=[],
-                          kappa=[], know_err=[], dec=[], trips=[], trip_open=[],
+                          kappa=[], know_err=[], dec=[], trips=[], trip_open=[], frames=[0, 0],
                           bytes_by=dict(task=0, retx=0, info=0, pose=0, v2=0, ack=0, result=0, status=0))
 
     # ----- bookkeeping -----
@@ -316,9 +328,9 @@ class World:
 
     def _core(self, method, *args):
         """Events with message identity / time for the knowledge_estimation core (A-side information only)."""
-        kn = self.knows.get("core")
-        if kn is not None:
-            getattr(kn, method)(*args)
+        for mode in CORE_MODES:
+            if mode in self.knows:
+                getattr(self.knows[mode], method)(*args)
 
     def take_reward(self):
         r, self.r = self.r, 0.0
@@ -671,7 +683,10 @@ class World:
         pos, heading, vis = self.b_frames[self.b_i]
         self.b_pose = (pos, heading)
         for j in vis:
-            if self.rng.random() < LAYOUT["p_frame"]:
+            hit = self.rng.random() < LAYOUT["p_frame"]
+            self.stats["frames"][0] += 1  # recognition trials while in view (truth), for measuring p_frame
+            self.stats["frames"][1] += hit
+            if hit:
                 if not self.b_obj[j]:
                     self.b_obj[j], self.b_wrong[j] = True, self.rng.random() > LAYOUT["q_learn"]
                 if j in self.anom and any(o.deviates() for o in self.spots[j].objs):

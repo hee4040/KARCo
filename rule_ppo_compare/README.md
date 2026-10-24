@@ -55,7 +55,8 @@ PPO 모델은 `python ../rl/train.py --env sim2d`(PPO), `--no-belief`(PPO no B)�
 | Rule (Confirmed Cache) | 기대비용 규칙 | ACK로 받은 것만 |
 | Rule (Cache+Result) | 기대비용 규칙 | + A가 재검증한 작업 결과 |
 | Rule (optimistic) | 기대비용 규칙 | 지나갔으면 안다(1) |
-| **Rule (proposed)** | 기대비용 규칙 | 제안 추정(지나가며 본 확률, 보류 규칙, 요청·오조작 시 무효화) |
+| **Rule (proposed)** | 기대비용 규칙 | 제안 추정(`knowledge_estimation`: 시점 기반 통과 확률, 보류 규칙, 요청·오조작 시 무효화) |
+| Rule (p_acq table) | 기대비용 규칙 | 같은 추정기, 통과 확률만 이전 경로별 빈도표 (비교용) |
 | Rule-default | 원본 규칙 그대로(원래 확률 가정) | 제안 추정 |
 | PPO (no B) / PPO | 처음부터 학습 | 없음 / 제안 추정 |
 | BC (rule copy) / **PPO from rule** | Rule (proposed)를 따라 배운 뒤 PPO | 제안 추정 |
@@ -77,6 +78,8 @@ PPO 모델은 `python ../rl/train.py --env sim2d`(PPO), `--no-belief`(PPO no B)�
 `compare.py` 끝에는 Rule (proposed) 대비 에피소드별 짝지은 차이(평균, 95% 신뢰구간, p값)를 출력한다.
 
 ## 결과 (2026-10-23, 조건별 200 에피소드, PPO 20만 스텝)
+
+> 2026-10-25: 추정기의 통과 확률이 시점 기반 모델로 바뀌었다. 규칙 계열의 새 최종 비교(seed 500000–500199)는 [knowledge_estimation/integration/SIM2D_RESULTS.md §5](../knowledge_estimation/integration/SIM2D_RESULTS.md)에 있다. 아래 표는 seed 0–199에서 이전 추정기로 낸 값이고, PPO는 새 추정값으로 다시 학습해야 한다.
 
 보상 (높을수록 좋음). 괄호는 Rule (proposed) 대비 짝지은 차이, \* = p < 0.05.
 

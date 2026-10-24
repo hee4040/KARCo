@@ -50,6 +50,7 @@ METHODS = {
     "Rule (Cache+Result)":   (lambda env: rule_calibrated(env, "cache_result"), True, "cache_result"),
     "Rule (optimistic)":     (lambda env: rule_calibrated(env, "optimistic"), True, "optimistic"),
     "Rule (proposed)":       (lambda env: rule_calibrated(env, "core"), True, "core"),  # knowledge_estimation
+    "Rule (p_acq table)":    (lambda env: rule_calibrated(env, "core_table"), True, "core_table"),  # its older pass model
     "Rule-default":          (lambda env: rule_default(env, "core"), True, "core"),
     "PPO (no B)":            (ppo("unc"), False, None),
     "PPO":                   (ppo("proposed"), True, "core"),
@@ -136,7 +137,8 @@ for cond in CONDITIONS:
             d = np.array([e[key] - ref[e["seed"]][key] for e in eps if e["condition"] == cond and e["method"] == name])
             se = d.std(ddof=1) / math.sqrt(len(d)) if len(d) > 1 else float("nan")
             pval = math.erfc(abs(d.mean() / se) / math.sqrt(2)) if se > 0 else float("nan")
-            if name in ("PPO from rule", "PPO", "BC (rule copy)", "Rule (Confirmed Cache)", "Rule (optimistic)"):
+            if name in ("PPO from rule", "PPO", "BC (rule copy)", "Rule (Confirmed Cache)", "Rule (optimistic)",
+                        "Rule (p_acq table)"):
                 print(f"  {cond:<9}{name:<24}{key:<7}{d.mean():>+8.2f}  [{d.mean() - 1.96 * se:+.2f}, "
                       f"{d.mean() + 1.96 * se:+.2f}]  p={pval:.3f}")
 

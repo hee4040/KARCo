@@ -22,7 +22,7 @@ from ..parameters import MissingMeasurement, ParameterStore
 _PACKAGE = Path(__file__).resolve().parents[1]
 _CORE_CODE_FINGERPRINT = hashlib.sha256(b"".join(path.read_bytes().replace(b"\r\n", b"\n") for path in (
     Path(__file__).resolve(), _PACKAGE / "types.py", _PACKAGE / "parameters.py",
-    _PACKAGE / "protocol.py", Path(__file__).with_name("probabilities.py")))).hexdigest()
+    Path(__file__).with_name("probabilities.py"), Path(__file__).with_name("perspective.py")))).hexdigest()
 
 
 @dataclass
@@ -74,7 +74,10 @@ class KnowledgeEstimator:
         self, receiver_id: str = "B", *, memory_epoch: int = 0,
         config: EstimatorConfig | None = None,
         parameters: ParameterStore | None = None,
+        acquisition=None,
     ) -> None:
+        """acquisition: pass-by model, context -> (p_stored, p_usable, parameter_ids), e.g.
+        perspective.PerspectiveAcquisition. None = the measured p_acq frequency table of that context."""
         identifier(receiver_id, "receiver_id")
         counter(memory_epoch, "memory_epoch")
         self.receiver_id = receiver_id
@@ -82,6 +85,7 @@ class KnowledgeEstimator:
         self.boot_id: str | None = None
         self.config = config or EstimatorConfig()
         self.parameters = parameters or ParameterStore()
+        self.acquisition = acquisition
         self._versions: dict[KnowledgeKey, int] = {}
         self._items_by_key: dict[KnowledgeKey, KnowledgeItem] = {}
         self._revisions: dict[KnowledgeKey, int] = {}
@@ -104,6 +108,8 @@ class KnowledgeEstimator:
     @property
     def fingerprint(self):
         definition = "notion-receiver-v1:" + _CORE_CODE_FINGERPRINT + self.parameters.fingerprint + repr(self.config)
+        if self.acquisition is not None:
+            definition += ":acquisition:" + self.acquisition.fingerprint
         return hashlib.sha256(definition.encode()).hexdigest()
 
     def _tick(self, now: float | None) -> None:
@@ -510,7 +516,11 @@ class KnowledgeEstimator:
             ):
                 continue
             context = {**visit.context, "kind": item.key.kind.value}
-            acquired, ids = self._measured("p_acq", context)
+            if self.acquisition is None:
+                acquired, ids = self._measured("p_acq", context)
+                usable = 1.
+            else:
+                acquired, usable, ids = self.acquisition(context)
             progress = 1.
             if not visit.complete:
                 try:
@@ -520,7 +530,7 @@ class KnowledgeEstimator:
                     progress = None
             self._put(
                 f"pass:{pass_id}", item, "pass_by",
-                acquired * progress if acquired is not None and progress is not None else None, 1.0,
+                acquired * progress if acquired is not None and progress is not None else None, usable,
                 visit.dependency_group, (pass_id,), ids,
             )
 

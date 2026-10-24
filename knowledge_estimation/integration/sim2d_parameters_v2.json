@@ -15,7 +15,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 3480,
    "successes": 3443,
    "value": 0.989367816091954
@@ -33,7 +33,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 947,
    "successes": 742,
    "value": 0.7835269271383316
@@ -51,7 +51,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 363,
    "successes": 261,
    "value": 0.71900826446281
@@ -69,7 +69,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 392,
    "successes": 284,
    "value": 0.7244897959183674
@@ -87,7 +87,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 358,
    "successes": 326,
    "value": 0.9106145251396648
@@ -105,7 +105,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 388,
    "successes": 267,
    "value": 0.6881443298969072
@@ -123,7 +123,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 373,
    "successes": 190,
    "value": 0.5093833780160858
@@ -141,7 +141,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 389,
    "successes": 353,
    "value": 0.9074550128534704
@@ -159,7 +159,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 365,
    "successes": 200,
    "value": 0.547945205479452
@@ -177,7 +177,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 385,
    "successes": 276,
    "value": 0.7168831168831169
@@ -195,7 +195,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 396,
    "successes": 140,
    "value": 0.35353535353535354
@@ -213,7 +213,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 381,
    "successes": 317,
    "value": 0.8320209973753281
@@ -231,7 +231,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 380,
    "successes": 369,
    "value": 0.9710526315789474
@@ -249,7 +249,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 363,
    "successes": 267,
    "value": 0.7355371900826446
@@ -267,7 +267,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 392,
    "successes": 290,
    "value": 0.7397959183673469
@@ -285,7 +285,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 358,
    "successes": 346,
    "value": 0.9664804469273743
@@ -303,7 +303,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 388,
    "successes": 279,
    "value": 0.7190721649484536
@@ -321,7 +321,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 373,
    "successes": 196,
    "value": 0.5254691689008043
@@ -339,7 +339,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 389,
    "successes": 365,
    "value": 0.9383033419023136
@@ -357,7 +357,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 365,
    "successes": 210,
    "value": 0.5753424657534246
@@ -375,7 +375,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 385,
    "successes": 282,
    "value": 0.7324675324675325
@@ -393,7 +393,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 396,
    "successes": 143,
    "value": 0.3611111111111111
@@ -411,7 +411,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 381,
    "successes": 323,
    "value": 0.847769028871391
@@ -429,10 +429,28 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 380,
    "successes": 377,
    "value": 0.9921052631578947
+  },
+  {
+   "name": "p_frame",
+   "parameter_id": "sim2d:p_frame:B::::in_view",
+   "context": {
+    "receiver_id": "B",
+    "kind": "",
+    "site_id": "",
+    "route_id": "",
+    "condition_id": "in_view"
+   },
+   "evidence_ids": [
+    "sim2d-calibration-log"
+   ],
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
+   "trials": 59789,
+   "successes": 9087,
+   "value": 0.1519844787502718
   },
   {
    "name": "p_recv",
@@ -447,7 +465,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 3667,
    "successes": 3628,
    "value": 0.9893646032178893,
@@ -466,7 +484,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 3628,
    "samples_seconds": [
     0.05257219338386645,
@@ -4113,7 +4131,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 1194,
    "successes": 959,
    "value": 0.8031825795644891,
@@ -4132,7 +4150,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 959,
    "samples_seconds": [
     0.6793437108459082,
@@ -5099,6 +5117,24 @@
   },
   {
    "name": "q_learn",
+   "parameter_id": "sim2d:q_learn:B:I:::pass",
+   "context": {
+    "receiver_id": "B",
+    "kind": "I",
+    "site_id": "",
+    "route_id": "",
+    "condition_id": "pass"
+   },
+   "evidence_ids": [
+    "sim2d-calibration-log"
+   ],
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
+   "trials": 3078,
+   "successes": 2983,
+   "value": 0.9691358024691358
+  },
+  {
+   "name": "q_learn",
    "parameter_id": "sim2d:q_learn:B:I:::verified",
    "context": {
     "receiver_id": "B",
@@ -5110,7 +5146,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 1588,
    "successes": 1552,
    "value": 0.9773299748110831
@@ -5128,7 +5164,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 4427,
    "successes": 4427,
    "value": 1.0
@@ -5146,7 +5182,7 @@
    "evidence_ids": [
     "sim2d-calibration-log"
    ],
-   "input_sha256": "825ec1c61fdd4d0925008f9057963f4cb98520de332e98a674816917e04cccbb",
+   "input_sha256": "c5adfd342511aad9e581cc345d79eaf1e4b8fbd22df2dbe95e3dce6eacbdddb5",
    "trials": 4427,
    "successes": 4419,
    "value": 0.9981929071606054
@@ -5158,5 +5194,5 @@
   100000,
   100299
  ],
- "log": "knowledge_estimation\\data\\sim2d_calibration_v1\\log.csv"
+ "log": "knowledge_estimation\\data\\sim2d_calibration_v2\\log.csv"
 }

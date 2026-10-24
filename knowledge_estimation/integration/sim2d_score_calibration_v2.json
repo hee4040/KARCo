@@ -1,0 +1,156 @@
+{
+ "schema_version": 1,
+ "origin": "simulation",
+ "estimator_fingerprint": "a94d2560f917a045540970bab353c2c20a799581da32b38971c24ad89d427618",
+ "receiver_ids": [
+  "B"
+ ],
+ "maps": {
+  "N": {
+   "support": [
+    0.0,
+    1.0
+   ],
+   "blocks": [
+    {
+     "upper": 0.46904375626282396,
+     "count": 2567,
+     "positive": 720,
+     "value": 0.28048305414881186
+    },
+    {
+     "upper": 0.6281028866513623,
+     "count": 126,
+     "positive": 66,
+     "value": 0.5238095238095238
+    },
+    {
+     "upper": 0.7325575082786315,
+     "count": 228,
+     "positive": 191,
+     "value": 0.8377192982456141
+    },
+    {
+     "upper": 0.9156554513616373,
+     "count": 116,
+     "positive": 99,
+     "value": 0.853448275862069
+    },
+    {
+     "upper": 0.9948841047983713,
+     "count": 769,
+     "positive": 734,
+     "value": 0.9544863459037711
+    },
+    {
+     "upper": 1.0,
+     "count": 7356,
+     "positive": 7217,
+     "value": 0.9811038607939098
+    }
+   ]
+  },
+  "I": {
+   "support": [
+    0.0,
+    1.0
+   ],
+   "blocks": [
+    {
+     "upper": 0.0,
+     "count": 4343,
+     "positive": 1861,
+     "value": 0.4285056412618006
+    },
+    {
+     "upper": 0.6087169950880486,
+     "count": 198,
+     "positive": 99,
+     "value": 0.5
+    },
+    {
+     "upper": 0.8873944806405991,
+     "count": 480,
+     "positive": 376,
+     "value": 0.7833333333333333
+    },
+    {
+     "upper": 0.9103531391954677,
+     "count": 470,
+     "positive": 395,
+     "value": 0.8404255319148937
+    },
+    {
+     "upper": 0.9641778052675574,
+     "count": 608,
+     "positive": 537,
+     "value": 0.8832236842105263
+    },
+    {
+     "upper": 0.9773299748110831,
+     "count": 2602,
+     "positive": 2317,
+     "value": 0.8904688700999231
+    },
+    {
+     "upper": 1.0,
+     "count": 2461,
+     "positive": 2431,
+     "value": 0.9878098334010564
+    }
+   ]
+  },
+  "C": {
+   "support": [
+    0.0,
+    0.9981929071606054
+   ],
+   "blocks": [
+    {
+     "upper": 0.0,
+     "count": 8032,
+     "positive": 3084,
+     "value": 0.3839641434262948
+    },
+    {
+     "upper": 0.46819615064951864,
+     "count": 11,
+     "positive": 9,
+     "value": 0.8181818181818182
+    },
+    {
+     "upper": 0.49635282448106993,
+     "count": 13,
+     "positive": 12,
+     "value": 0.9230769230769231
+    },
+    {
+     "upper": 0.9981929071606054,
+     "count": 3106,
+     "positive": 3096,
+     "value": 0.9967804249839022
+    }
+   ]
+  }
+ },
+ "fit_split": "calibration",
+ "method": "isotonic_PAV_no_prior_no_extrapolation",
+ "decisions": 11162,
+ "pairs": {
+  "N": 11162,
+  "I": 11162,
+  "C": 11162
+ },
+ "seeds": [
+  110000,
+  110199
+ ],
+ "policies": [
+  "rule",
+  "minimal",
+  "fixed_state",
+  "full"
+ ],
+ "note": "decision-time records in the team 2D world; not robot data",
+ "model_id": "5fd85055fd541428d4f040d65e5c4375af7e3b5ce148a4c453c6e2ae18afa5ee"
+}

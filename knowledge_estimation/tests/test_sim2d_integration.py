@@ -3,6 +3,7 @@
 Event semantics are checked on a tiny stand-in world (only the A-side fields the adapter reads), so they do
 not depend on the simulator; the end-to-end check runs only when the team sim/ is present in this checkout.
 """
+import math
 from pathlib import Path
 import sys
 import unittest
@@ -67,8 +68,20 @@ class Adapter(unittest.TestCase):
         a = self.value("p_ack", condition_id="link_good")
         self.assertAlmostEqual(kn.normal[2], receipt_given_no_ack(d, a))
 
+    def test_perspective_pass_uses_planned_frames_and_sensor_rates(self):
+        from knowledge_estimation.probabilistic.perspective import Camera
+        # B drives past S2 facing +y: the first 3 planned frames see it (0.5 m ahead), the last 2 are beyond 1.2 m
+        plan = [(1.2, 0.45, math.pi / 2)] * 3 + [(1.2, 2.3, -math.pi / 2)] * 2
+        kn = CoreKnowledge(self.world, store(), SPOTS, plans={"to0": plan}, camera=Camera(math.radians(87), 0.4, 1.2))
+        kn.trip(0, set(), [2])
+        kn.on_spot_seen(2, True)
+        p = self.value("p_frame", condition_id="in_view")
+        self.assertAlmostEqual(kn.normal[2], 1 - (1 - p) ** 3)
+        self.assertAlmostEqual(kn.obj[2], (1 - (1 - p) ** 3) * self.value("q_learn", kind="I", condition_id="pass"))
+        self.assertNotEqual(kn.core.fingerprint, self.kn.core.fingerprint)  # table / perspective maps cannot be swapped
+
     def test_pass_waits_for_a_normal_confirmation(self):
-        kn = self.kn
+        kn = self.kn  # p_acq table variant
         kn.trip(0, set(), [1, 2, 3])
         self.assertEqual(kn.normal[2], 0.0)  # section 8: no pass evidence before A sees the spot normal
         kn.on_spot_seen(2, True)
@@ -124,15 +137,17 @@ class EndToEnd(unittest.TestCase):
             done = False
             while not done:
                 _, _, done, _, info = env.step(FULL)
-            kn = env.world.knows["core"]
-            self.assertIs(env.world.know, kn)  # the policy input is knowledge_estimation, nothing else
-            self.assertEqual((kn.unsupported, kn.contradictions), (0, 0), cond)
-            self.assertTrue(all("core" in d["est"] for d in info["stats"]["dec"]))
-            self.assertEqual(len(kn.decisions), len(info["stats"]["dec"]))  # one decision-time record each
-            for rec in kn.decisions:
-                self.assertEqual(rec["fingerprint"], kn.core.fingerprint)
-                for kind in "NIC":
-                    self.assertTrue({"raw", "cal", "safe", "reason", "sources"} <= set(rec[kind]))
+            self.assertIs(env.world.know, env.world.knows["core"])  # the policy input is knowledge_estimation
+            self.assertIsNotNone(env.world.know.core.acquisition)  # ... with the perspective pass-by model
+            for mode in ("core", "core_table"):
+                kn = env.world.knows[mode]
+                self.assertEqual((kn.unsupported, kn.contradictions), (0, 0), (cond, mode))
+                self.assertTrue(all(mode in d["est"] for d in info["stats"]["dec"]))
+                self.assertEqual(len(kn.decisions), len(info["stats"]["dec"]))  # one decision-time record each
+                for rec in kn.decisions:
+                    self.assertEqual(rec["fingerprint"], kn.core.fingerprint)
+                    for kind in "NIC":
+                        self.assertTrue({"raw", "cal", "safe", "reason", "sources"} <= set(rec[kind]))
 
     def test_notion_rule_checks_hold(self):
         from knowledge_estimation.integration.sim2d_trace import check, run

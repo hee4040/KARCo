@@ -13,7 +13,7 @@ class MissingMeasurement(ValueError):
 
 
 CONTEXT_FIELDS = ("receiver_id", "kind", "site_id", "route_id", "condition_id")
-PROBABILITIES = ("p_acq", "q_learn", "r_crop", "r_current", "p_recv", "p_ack")
+PROBABILITIES = ("p_acq", "p_frame", "q_learn", "r_crop", "r_current", "p_recv", "p_ack")
 DISTRIBUTIONS = ("F_pass", "F_task", "F_recv")
 
 

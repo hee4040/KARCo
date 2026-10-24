@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "origin": "simulation",
- "estimator_fingerprint": "14d9c20514062cd6bf2c59bb153f3b755af92be28a1284c58435c02fb95ee916",
+ "estimator_fingerprint": "b237dce48e23dc06b80d899d21f87035063407af45b9c5a7f7c2893b8f15236a",
  "receiver_ids": [
   "B"
  ],
@@ -14,9 +14,9 @@
    "blocks": [
     {
      "upper": 0.0,
-     "count": 2531,
-     "positive": 712,
-     "value": 0.2813117344922955
+     "count": 2530,
+     "positive": 710,
+     "value": 0.28063241106719367
     },
     {
      "upper": 0.46904375626282396,
@@ -56,15 +56,15 @@
     },
     {
      "upper": 0.9921052631578947,
-     "count": 484,
-     "positive": 459,
-     "value": 0.9483471074380165
+     "count": 508,
+     "positive": 483,
+     "value": 0.9507874015748031
     },
     {
      "upper": 1.0,
-     "count": 7377,
-     "positive": 7237,
-     "value": 0.9810220957028603
+     "count": 7356,
+     "positive": 7217,
+     "value": 0.9811038607939098
     }
    ]
   },
@@ -112,15 +112,15 @@
     },
     {
      "upper": 0.9773299748110831,
-     "count": 2604,
-     "positive": 2319,
-     "value": 0.8905529953917051
+     "count": 2602,
+     "positive": 2317,
+     "value": 0.8904688700999231
     },
     {
      "upper": 1.0,
-     "count": 2452,
-     "positive": 2422,
-     "value": 0.9877650897226754
+     "count": 2461,
+     "positive": 2431,
+     "value": 0.9878098334010564
     }
    ]
   },
@@ -132,15 +132,15 @@
    "blocks": [
     {
      "upper": 0.0,
-     "count": 8037,
-     "positive": 3089,
-     "value": 0.38434739330595996
+     "count": 8032,
+     "positive": 3084,
+     "value": 0.3839641434262948
     },
     {
      "upper": 0.46819615064951864,
-     "count": 10,
+     "count": 11,
      "positive": 9,
-     "value": 0.9
+     "value": 0.8181818181818182
     },
     {
      "upper": 0.49635282448106993,
@@ -150,9 +150,9 @@
     },
     {
      "upper": 0.9981929071606054,
-     "count": 3102,
-     "positive": 3092,
-     "value": 0.996776273372018
+     "count": 3106,
+     "positive": 3096,
+     "value": 0.9967804249839022
     }
    ]
   }
@@ -161,8 +161,8 @@
  "method": "isotonic_PAV_no_prior_no_extrapolation",
  "decisions": 11162,
  "pairs": {
-  "N": 11160,
-  "I": 11155,
+  "N": 11162,
+  "I": 11162,
   "C": 11162
  },
  "seeds": [
@@ -176,5 +176,5 @@
   "full"
  ],
  "note": "decision-time records in the team 2D world; not robot data",
- "model_id": "f40ea5294023a55917a76ec47fcb8911998664d2f0d6ba89fe1514ba273e629b"
+ "model_id": "b63c88c89fe7a57c85bc8ebd7598cd9133a725021ff6d1aeeb60d51ef985bea6"
 }
