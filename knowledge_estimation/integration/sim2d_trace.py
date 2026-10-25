@@ -5,7 +5,8 @@ python -m knowledge_estimation.integration.sim2d_trace --episodes 40       # cov
 
 Rule checks run on the estimator's own records after every episode (A-side information only):
   send alone never stores           evidence created by a send has p_stored 0 (F_recv at t=0) or None, never 1
-  pass waits for normal (section 8) every pass_by evidence belongs to a pass confirmed normal before and after
+  pass waits for normal (section 8) every gated pass_by evidence (N, and I where the look may have changed)
+                                    belongs to a pass confirmed normal before and after
   RESULT ok waits for A             every verified_task evidence has a task_verified record before it
   no-ACK posterior                  every ack_timeout evidence equals d(1-a)/(1-da) of the measured channel
   unmeasured stays None             estimates that are None are counted, never turned into a number by the core
@@ -25,6 +26,7 @@ BRANCHES = {  # core history action -> Notion branch
     "needs_info": "6 needs_info / request invalidates", "missing": "2(d) wrong look invalidated",
     "diagnostic:not_found": "4(d) not_found kept as diagnostic", "pass_by": "3 pass recorded",
     "pass_confirmed": "8 pass confirmed normal", "pass_abnormal": "8 pass dropped (abnormal)",
+    "pass_sighting": "3 B passed a known-abnormal spot (C)",
     "result_pending": "1(a) RESULT ok pending", "task_verified": "1(a) verified by A",
     "evidence_revoked": "2(d) verified evidence revoked", "memory_reset": "2(b) new memory epoch",
     "version": "5 new item version (C re-measured)",
@@ -58,7 +60,7 @@ def check(world):
                 problems.append(f"send stored {ev.p_stored}")
             if ev.source == "pass_by":
                 visit = core._passes[ev.provenance_ids[0]]
-                if not (visit.normal_before and visit.normal_after is True):
+                if visit.normal_gate and not (visit.normal_before and visit.normal_after is True):
                     problems.append(f"pass used before normal confirmation: {ev.evidence_id}")
             if ev.source == "verified_task" and ev.provenance_ids[0] not in verified_at:
                 problems.append(f"task evidence without verification: {ev.evidence_id}")

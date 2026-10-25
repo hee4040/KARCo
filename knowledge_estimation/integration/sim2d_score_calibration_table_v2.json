@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "origin": "simulation",
- "estimator_fingerprint": "b237dce48e23dc06b80d899d21f87035063407af45b9c5a7f7c2893b8f15236a",
+ "estimator_fingerprint": "6ef12fa465298ff5a904f2bef01dff4b0cbe9a1d15b0948b39b1d171b76d1d35",
  "receiver_ids": [
   "B"
  ],
@@ -62,9 +62,9 @@
     },
     {
      "upper": 1.0,
-     "count": 7356,
-     "positive": 7217,
-     "value": 0.9811038607939098
+     "count": 7348,
+     "positive": 7209,
+     "value": 0.9810832879695155
     }
    ]
   },
@@ -76,9 +76,9 @@
    "blocks": [
     {
      "upper": 0.0,
-     "count": 4343,
-     "positive": 1861,
-     "value": 0.4285056412618006
+     "count": 4341,
+     "positive": 1856,
+     "value": 0.42755125547108963
     },
     {
      "upper": 0.35353535353535354,
@@ -100,9 +100,9 @@
     },
     {
      "upper": 0.9106145251396648,
-     "count": 1242,
-     "positive": 1043,
-     "value": 0.8397745571658615
+     "count": 1235,
+     "positive": 1036,
+     "value": 0.8388663967611336
     },
     {
      "upper": 0.9710526315789474,
@@ -112,15 +112,15 @@
     },
     {
      "upper": 0.9773299748110831,
-     "count": 2602,
-     "positive": 2317,
-     "value": 0.8904688700999231
+     "count": 2615,
+     "positive": 2334,
+     "value": 0.8925430210325048
     },
     {
      "upper": 1.0,
-     "count": 2461,
-     "positive": 2431,
-     "value": 0.9878098334010564
+     "count": 2449,
+     "positive": 2421,
+     "value": 0.9885667619436505
     }
    ]
   },
@@ -132,9 +132,9 @@
    "blocks": [
     {
      "upper": 0.0,
-     "count": 8032,
-     "positive": 3084,
-     "value": 0.3839641434262948
+     "count": 8083,
+     "positive": 3115,
+     "value": 0.38537671656563155
     },
     {
      "upper": 0.46819615064951864,
@@ -150,20 +150,20 @@
     },
     {
      "upper": 0.9981929071606054,
-     "count": 3106,
-     "positive": 3096,
-     "value": 0.9967804249839022
+     "count": 3047,
+     "positive": 3037,
+     "value": 0.9967180833606827
     }
    ]
   }
  },
  "fit_split": "calibration",
  "method": "isotonic_PAV_no_prior_no_extrapolation",
- "decisions": 11162,
+ "decisions": 11154,
  "pairs": {
-  "N": 11162,
-  "I": 11162,
-  "C": 11162
+  "N": 11154,
+  "I": 11154,
+  "C": 11154
  },
  "seeds": [
   110000,
@@ -176,5 +176,5 @@
   "full"
  ],
  "note": "decision-time records in the team 2D world; not robot data",
- "model_id": "b63c88c89fe7a57c85bc8ebd7598cd9133a725021ff6d1aeeb60d51ef985bea6"
+ "model_id": "2af3813cc2a5399e7b9858a225766aeb308bcc5c0a4e8235cc1add415ecc3142"
 }

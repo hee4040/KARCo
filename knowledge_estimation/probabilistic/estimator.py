@@ -55,6 +55,7 @@ class _Pass:
     progress: float = 0.
     complete: bool = False
     layouts: dict = field(default_factory=dict)
+    normal_gate: bool = True
 
 
 @dataclass
@@ -446,12 +447,14 @@ class KnowledgeEstimator:
         self, pass_id: str, items: Iterable[KnowledgeItem], *,
         route_id: str, condition_id: str, site_id: str,
         normal_before: bool, complete: bool = False, elapsed: float | None = None,
-        dependency_group: str | None = None, now: float | None = None,
+        dependency_group: str | None = None, now: float | None = None, normal_gate: bool = True,
     ) -> None:
         """Use predicted route/visibility known to A, never hidden simulator occlusion.
 
         N waits for confirm_pass_by(normal_after=True), with normal_before=True.
-        Section 8's normal-interval gate applies before pass storage is used.
+        Section 8's normal-interval gate applies before pass storage is used. normal_gate=False is for
+        appearance items only: an object looks the same whether or not it sits in its normal place, so the
+        caller drops the gate when A knows the look was not changed (no open wrong-part event there).
         """
         identifier(pass_id, "pass_id")
         if not isinstance(normal_before, bool):
@@ -465,6 +468,8 @@ class KnowledgeEstimator:
         payload = self._items(items)
         if any(i.key.kind == Information.CURRENT for i in payload):
             raise ValueError("pass-by supports N/I; a current pose needs a versioned report")
+        if not normal_gate and any(i.key.kind != Information.APPEARANCE for i in payload):
+            raise ValueError("only appearance items may skip the normal-interval gate")
         if pass_id in self._passes:
             raise ValueError("pass_id already exists; call confirm_pass_by to resolve N")
         group = dependency_group or f"pass:{pass_id}"
@@ -486,9 +491,36 @@ class KnowledgeEstimator:
         visit.progress = 1. if complete else elapsed
         # Store whether progress is a completion fact or an elapsed measurement.
         visit.complete = complete
+        visit.normal_gate = normal_gate
         self._passes[pass_id] = visit
         self._apply_pass(pass_id, visit)
         self._log("pass_by", pass_id, payload)
+
+    def record_pass_sighting(
+        self, pass_id: str, item: KnowledgeItem, *,
+        route_id: str, condition_id: str, site_id: str, now: float | None = None,
+    ) -> None:
+        """B drove past a site A already knew to be abnormal, so B may have seen its current state itself.
+
+        Evidence for the C version A holds now; a later version (A re-measures the pose) voids it like any
+        older C evidence. The probability comes from the acquisition model, or the measured p_acq of kind C.
+        """
+        identifier(pass_id, "pass_id")
+        for name, value in (("route_id", route_id), ("site_id", site_id), ("condition_id", condition_id)):
+            identifier(value, name)
+        if item.key.kind != Information.CURRENT:
+            raise ValueError("a pass sighting is evidence for the current state C only")
+        if self._versions.get(item.key) != item.version:
+            raise ValueError("register the current C version before recording a sighting")
+        self._tick(now)
+        context = self._context(condition_id, kind=item.key.kind.value, site_id=site_id, route_id=route_id)
+        if self.acquisition is None:
+            stored, ids = self._measured("p_acq", context)
+            usable = 1.
+        else:
+            stored, usable, ids = self.acquisition(context)
+        self._put(f"sighting:{pass_id}", item, "pass_sighting", stored, usable, f"pass:{pass_id}", (pass_id,), ids)
+        self._log("pass_sighting", pass_id, (item,))
 
     def observe_frame_invalid(self, frame_id: str, *, reason: str, now: float | None = None) -> None:
         """Explicit transform/frame diagnosis; a mere tag_lost report is not this."""
@@ -511,7 +543,7 @@ class KnowledgeEstimator:
                 continue
             # Notion section 8: pass-by storage is gated by a confirmed normal
             # interval. No provisional evidence is usable before confirmation.
-            if not (
+            if visit.normal_gate and not (
                 visit.normal_before and visit.normal_after is True
             ):
                 continue

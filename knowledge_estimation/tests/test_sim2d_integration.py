@@ -74,11 +74,19 @@ class Adapter(unittest.TestCase):
         plan = [(1.2, 0.45, math.pi / 2)] * 3 + [(1.2, 2.3, -math.pi / 2)] * 2
         kn = CoreKnowledge(self.world, store(), SPOTS, plans={"to0": plan}, camera=Camera(math.radians(87), 0.4, 1.2))
         kn.trip(0, set(), [2])
-        kn.on_spot_seen(2, True)
         p = self.value("p_frame", condition_id="in_view")
+        look = (1 - (1 - p) ** 3) * self.value("q_learn", kind="I", condition_id="pass")
+        self.assertEqual(kn.normal[2], 0.0)       # N waits for A's normal confirmation (section 8) ...
+        self.assertAlmostEqual(kn.obj[2], look)  # ... the look does not
+        kn.on_spot_seen(2, True)
         self.assertAlmostEqual(kn.normal[2], 1 - (1 - p) ** 3)
-        self.assertAlmostEqual(kn.obj[2], (1 - (1 - p) ** 3) * self.value("q_learn", kind="I", condition_id="pass"))
+        self.assertAlmostEqual(kn.obj[2], look)  # same pass, not counted twice
         self.assertNotEqual(kn.core.fingerprint, self.kn.core.fingerprint)  # table / perspective maps cannot be swapped
+        kn.pose_measured(2, 0, 0.0)  # A detected an event at S2 and measured the pose
+        kn.trip(0, {2}, [2])         # B passed it while A knew it was abnormal: B may have seen the event
+        self.assertAlmostEqual(kn.cur[2], 1 - (1 - p) ** 3)
+        kn.pose_measured(2, 1, 0.0)  # a new C version voids the sighting
+        self.assertEqual(kn.cur[2], 0.0)
 
     def test_pass_waits_for_a_normal_confirmation(self):
         kn = self.kn  # p_acq table variant

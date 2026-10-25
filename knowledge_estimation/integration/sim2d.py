@@ -28,8 +28,9 @@ The policy reads `level` (b_safe by default). A None there is passed as 0.0 - th
 "unknown means B does not hold it", so A sends - and counted in `unsupported`; the core itself never fills it.
 Every decision leaves a decision-time record (section 11) in `decisions`: all three levels, the reason the
 calibration was or was not applied, the evidence sources, the estimator fingerprint and the calibration id.
-Differences from features.BKnowledge("proposed") are deliberate core semantics: C is never inferred from
-passing (it needs a versioned report), and not_found does not clear C because its cause is unknown.
+A spot A already knew to be abnormal when B passed gives C evidence (record_pass_sighting): B may have seen the
+event itself, which is what the rule's b_C stands for. It applies to the C version A holds at the trip report.
+not_found does not clear C because its cause is unknown.
 Built without plans, the same estimator reads the older per-(item, site, route) p_acq frequency table instead;
 the world keeps that variant as "core_table", for comparison only.
 """
@@ -252,10 +253,26 @@ class CoreKnowledge:
                 continue
             self.count += 1
             pass_id = f"p{self.count}"
-            self.core.record_pass_by(pass_id, [self.normal_item[j], self.look_item[j]], route_id=f"to{k}",
-                                     condition_id=PASS_CONDITION, site_id=f"S{j}", normal_before=j not in open_spots,
-                                     complete=True, now=now)
+            route = dict(route_id=f"to{k}", condition_id=PASS_CONDITION, site_id=f"S{j}")
+            look_changed = j in open_spots and self._event_type(j) == "wrong part"
+            if self.core.acquisition is None or look_changed:  # table variant keeps the older gated I
+                looks = [self.look_item[j]]
+            else:  # the look does not depend on the object sitting in its normal place: no normal gate
+                looks = []
+                self.core.record_pass_by(pass_id + "i", [self.look_item[j]], **route, normal_before=j not in open_spots,
+                                         complete=True, now=now, normal_gate=False)
+            self.core.record_pass_by(pass_id, [self.normal_item[j]] + looks, **route,
+                                     normal_before=j not in open_spots, complete=True, now=now)
             self.passes.setdefault(j, []).append(pass_id)
+            if j in open_spots and j in self.cur_item and self.core.acquisition is not None:
+                # the spot was abnormal: B may have seen the event itself (the table variant has no p_acq for C)
+                self.core.record_pass_sighting(pass_id, self.cur_item[j], route_id=f"to{k}",
+                                               condition_id=PASS_CONDITION, site_id=f"S{j}", now=now)
+
+    def _event_type(self, k):
+        """Type of the event A itself detected at spot k (World.ATYPES), or None if A knows of none."""
+        a = getattr(self.world, "anom", {}).get(k)
+        return None if a is None else ("misplaced", "toppled", "wrong part")[a.atype]
 
     # ----- the BKnowledge interface the world already calls (World._knows) -----
     def on_ack(self, spot, items):
